@@ -1,0 +1,9 @@
+### Create Project
+POST http://localhost:8080/api/projects
+Content-Type: application/json
+
+{
+  "name": "My Dream House",
+  "location": "Bageshwar",
+  "budget": 4000000
+}
