@@ -11,6 +11,7 @@ public class HouseResponseDTO {
     private Integer numberOfBedrooms;
     private Integer numberOfBathrooms;
     private LocalDateTime createdAt;
+    private Long projectId;
 
     public HouseResponseDTO() {
     }
@@ -22,7 +23,8 @@ public class HouseResponseDTO {
             Integer numberOfFloors,
             Integer numberOfBedrooms,
             Integer numberOfBathrooms,
-            LocalDateTime createdAt) {
+            LocalDateTime createdAt,
+            Long projectId) {
 
         this.id = id;
         this.houseName = houseName;
@@ -31,6 +33,7 @@ public class HouseResponseDTO {
         this.numberOfBedrooms = numberOfBedrooms;
         this.numberOfBathrooms = numberOfBathrooms;
         this.createdAt = createdAt;
+        this.projectId = projectId;
     }
 
     public Long getId() {
@@ -87,5 +90,13 @@ public class HouseResponseDTO {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 }

@@ -7,6 +7,7 @@ public class HouseRequestDTO {
     private Integer numberOfFloors;
     private Integer numberOfBedrooms;
     private Integer numberOfBathrooms;
+    private Long projectId;
 
     public HouseRequestDTO() {
     }
@@ -49,5 +50,13 @@ public class HouseRequestDTO {
 
     public void setNumberOfBathrooms(Integer numberOfBathrooms) {
         this.numberOfBathrooms = numberOfBathrooms;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 }

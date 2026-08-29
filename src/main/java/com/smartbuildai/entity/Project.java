@@ -3,10 +3,13 @@ package com.smartbuildai.entity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Project {
@@ -19,6 +22,9 @@ public class Project {
     private String location;
     private BigDecimal budget;
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "project")
+    private List<House> houses = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -63,5 +69,13 @@ public class Project {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public List<House> getHouses() {
+        return houses;
+    }
+
+    public void setHouses(List<House> houses) {
+        this.houses = houses;
     }
 }
