@@ -1,15 +1,18 @@
 package com.smartbuildai.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class House {
@@ -34,6 +37,9 @@ public class House {
     @JoinColumn(name = "project_id")
     @JsonIgnore
     private Project project;
+
+    @OneToMany(mappedBy = "house")
+    private List<Room> rooms = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -102,5 +108,13 @@ public class House {
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    public List<Room> getRooms() {
+        return rooms;
+    }
+
+    public void setRooms(List<Room> rooms) {
+        this.rooms = rooms;
     }
 }
