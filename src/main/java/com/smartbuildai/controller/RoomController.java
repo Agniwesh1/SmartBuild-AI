@@ -1,6 +1,7 @@
 package com.smartbuildai.controller;
 
-import com.smartbuildai.entity.Room;
+import com.smartbuildai.dto.RoomRequestDTO;
+import com.smartbuildai.dto.RoomResponseDTO;
 import com.smartbuildai.service.RoomService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,30 +19,38 @@ public class RoomController {
     }
 
     @PostMapping
-    public ResponseEntity<Room> createRoom(@RequestBody Room room) {
-        return ResponseEntity.ok(roomService.createRoom(room));
+    public ResponseEntity<RoomResponseDTO> createRoom(
+            @RequestBody RoomRequestDTO request) {
+
+        return ResponseEntity.ok(roomService.createRoom(request));
     }
 
     @GetMapping
-    public ResponseEntity<List<Room>> getAllRooms() {
+    public ResponseEntity<List<RoomResponseDTO>> getAllRooms() {
+
         return ResponseEntity.ok(roomService.getAllRooms());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Room> getRoomById(@PathVariable Long id) {
+    public ResponseEntity<RoomResponseDTO> getRoomById(
+            @PathVariable Long id) {
+
         return ResponseEntity.ok(roomService.getRoomById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Room> updateRoom(
+    public ResponseEntity<RoomResponseDTO> updateRoom(
             @PathVariable Long id,
-            @RequestBody Room room) {
+            @RequestBody RoomRequestDTO request) {
 
-        return ResponseEntity.ok(roomService.updateRoom(id, room));
+        return ResponseEntity.ok(
+                roomService.updateRoom(id, request)
+        );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteRoom(
+            @PathVariable Long id) {
 
         roomService.deleteRoom(id);
 

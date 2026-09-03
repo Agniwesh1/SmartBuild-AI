@@ -2,8 +2,10 @@ package com.smartbuildai.service;
 
 import com.smartbuildai.dto.HouseRequestDTO;
 import com.smartbuildai.dto.HouseResponseDTO;
+import com.smartbuildai.dto.RoomResponseDTO;
 import com.smartbuildai.entity.House;
 import com.smartbuildai.entity.Project;
+import com.smartbuildai.entity.Room;
 import com.smartbuildai.exception.HouseNotFoundException;
 import com.smartbuildai.exception.ProjectNotFoundException;
 import com.smartbuildai.repository.HouseRepository;
@@ -48,6 +50,7 @@ public class HouseService {
     }
 
     public List<HouseResponseDTO> getAllHouses() {
+
         return houseRepository.findAll()
                 .stream()
                 .map(this::convertToResponse)
@@ -102,6 +105,11 @@ public class HouseService {
 
     private HouseResponseDTO convertToResponse(House house) {
 
+        List<RoomResponseDTO> rooms = house.getRooms()
+                .stream()
+                .map(this::convertRoomToResponse)
+                .toList();
+
         return new HouseResponseDTO(
                 house.getId(),
                 house.getHouseName(),
@@ -110,7 +118,20 @@ public class HouseService {
                 house.getNumberOfBedrooms(),
                 house.getNumberOfBathrooms(),
                 house.getCreatedAt(),
-                house.getProject().getId()
+                house.getProject().getId(),
+                rooms
+        );
+    }
+
+    private RoomResponseDTO convertRoomToResponse(Room room) {
+
+        return new RoomResponseDTO(
+                room.getId(),
+                room.getRoomName(),
+                room.getRoomType(),
+                room.getArea(),
+                room.getCreatedAt(),
+                room.getHouse().getId()
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.smartbuildai.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class HouseResponseDTO {
 
@@ -12,6 +13,7 @@ public class HouseResponseDTO {
     private Integer numberOfBathrooms;
     private LocalDateTime createdAt;
     private Long projectId;
+    private List<RoomResponseDTO> rooms;
 
     public HouseResponseDTO() {
     }
@@ -24,7 +26,8 @@ public class HouseResponseDTO {
             Integer numberOfBedrooms,
             Integer numberOfBathrooms,
             LocalDateTime createdAt,
-            Long projectId) {
+            Long projectId,
+            List<RoomResponseDTO> rooms) {
 
         this.id = id;
         this.houseName = houseName;
@@ -34,6 +37,7 @@ public class HouseResponseDTO {
         this.numberOfBathrooms = numberOfBathrooms;
         this.createdAt = createdAt;
         this.projectId = projectId;
+        this.rooms = rooms;
     }
 
     public Long getId() {
@@ -98,5 +102,13 @@ public class HouseResponseDTO {
 
     public void setProjectId(Long projectId) {
         this.projectId = projectId;
+    }
+
+    public List<RoomResponseDTO> getRooms() {
+        return rooms;
+    }
+
+    public void setRooms(List<RoomResponseDTO> rooms) {
+        this.rooms = rooms;
     }
 }
