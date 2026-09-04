@@ -1,10 +1,12 @@
 package com.smartbuildai.service;
 
+import com.smartbuildai.dto.BudgetResponseDTO;
 import com.smartbuildai.dto.ExpenseResponseDTO;
 import com.smartbuildai.dto.HouseRequestDTO;
 import com.smartbuildai.dto.HouseResponseDTO;
 import com.smartbuildai.dto.MaterialResponseDTO;
 import com.smartbuildai.dto.RoomResponseDTO;
+import com.smartbuildai.entity.Budget;
 import com.smartbuildai.entity.Expense;
 import com.smartbuildai.entity.House;
 import com.smartbuildai.entity.Material;
@@ -35,9 +37,8 @@ public class HouseService {
     public HouseResponseDTO createHouse(HouseRequestDTO request) {
 
         Project project = projectRepository.findById(request.getProjectId())
-                .orElseThrow(() ->
-                        new ProjectNotFoundException(
-                                "Project not found with id: " + request.getProjectId()));
+                .orElseThrow(() -> new ProjectNotFoundException(
+                        "Project not found with id: " + request.getProjectId()));
 
         House house = new House();
 
@@ -64,9 +65,8 @@ public class HouseService {
     public HouseResponseDTO getHouseById(Long id) {
 
         House house = houseRepository.findById(id)
-                .orElseThrow(() ->
-                        new HouseNotFoundException(
-                                "House not found with id: " + id));
+                .orElseThrow(() -> new HouseNotFoundException(
+                        "House not found with id: " + id));
 
         return convertToResponse(house);
     }
@@ -76,14 +76,12 @@ public class HouseService {
             HouseRequestDTO request) {
 
         House existingHouse = houseRepository.findById(id)
-                .orElseThrow(() ->
-                        new HouseNotFoundException(
-                                "House not found with id: " + id));
+                .orElseThrow(() -> new HouseNotFoundException(
+                        "House not found with id: " + id));
 
         Project project = projectRepository.findById(request.getProjectId())
-                .orElseThrow(() ->
-                        new ProjectNotFoundException(
-                                "Project not found with id: " + request.getProjectId()));
+                .orElseThrow(() -> new ProjectNotFoundException(
+                        "Project not found with id: " + request.getProjectId()));
 
         existingHouse.setHouseName(request.getHouseName());
         existingHouse.setTotalArea(request.getTotalArea());
@@ -100,9 +98,8 @@ public class HouseService {
     public void deleteHouse(Long id) {
 
         House house = houseRepository.findById(id)
-                .orElseThrow(() ->
-                        new HouseNotFoundException(
-                                "House not found with id: " + id));
+                .orElseThrow(() -> new HouseNotFoundException(
+                        "House not found with id: " + id));
 
         houseRepository.delete(house);
     }
@@ -124,6 +121,11 @@ public class HouseService {
                 .map(this::convertExpenseToResponse)
                 .toList();
 
+        List<BudgetResponseDTO> budgets = house.getBudgets()
+                .stream()
+                .map(this::convertBudgetToResponse)
+                .toList();
+
         return new HouseResponseDTO(
                 house.getId(),
                 house.getHouseName(),
@@ -135,7 +137,8 @@ public class HouseService {
                 house.getProject().getId(),
                 rooms,
                 materials,
-                expenses
+                expenses,
+                budgets
         );
     }
 
@@ -175,6 +178,16 @@ public class HouseService {
                 expense.getDescription(),
                 expense.getCreatedAt(),
                 expense.getHouse().getId()
+        );
+    }
+
+    private BudgetResponseDTO convertBudgetToResponse(Budget budget) {
+
+        return new BudgetResponseDTO(
+                budget.getId(),
+                budget.getTotalBudget(),
+                budget.getCreatedAt(),
+                budget.getHouse().getId()
         );
     }
 }

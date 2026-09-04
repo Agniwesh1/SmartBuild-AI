@@ -13,9 +13,11 @@ public class HouseResponseDTO {
     private Integer numberOfBathrooms;
     private LocalDateTime createdAt;
     private Long projectId;
+
     private List<RoomResponseDTO> rooms;
     private List<MaterialResponseDTO> materials;
     private List<ExpenseResponseDTO> expenses;
+    private List<BudgetResponseDTO> budgets;
 
     public HouseResponseDTO() {
     }
@@ -31,7 +33,8 @@ public class HouseResponseDTO {
             Long projectId,
             List<RoomResponseDTO> rooms,
             List<MaterialResponseDTO> materials,
-            List<ExpenseResponseDTO> expenses) {
+            List<ExpenseResponseDTO> expenses,
+            List<BudgetResponseDTO> budgets) {
 
         this.id = id;
         this.houseName = houseName;
@@ -44,14 +47,11 @@ public class HouseResponseDTO {
         this.rooms = rooms;
         this.materials = materials;
         this.expenses = expenses;
+        this.budgets = budgets;
     }
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getHouseName() {
@@ -98,16 +98,8 @@ public class HouseResponseDTO {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public Long getProjectId() {
         return projectId;
-    }
-
-    public void setProjectId(Long projectId) {
-        this.projectId = projectId;
     }
 
     public List<RoomResponseDTO> getRooms() {
@@ -132,5 +124,13 @@ public class HouseResponseDTO {
 
     public void setExpenses(List<ExpenseResponseDTO> expenses) {
         this.expenses = expenses;
+    }
+
+    public List<BudgetResponseDTO> getBudgets() {
+        return budgets;
+    }
+
+    public void setBudgets(List<BudgetResponseDTO> budgets) {
+        this.budgets = budgets;
     }
 }

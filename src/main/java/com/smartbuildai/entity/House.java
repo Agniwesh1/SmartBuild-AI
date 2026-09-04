@@ -22,15 +22,10 @@ public class House {
     private Long id;
 
     private String houseName;
-
     private Double totalArea;
-
     private Integer numberOfFloors;
-
     private Integer numberOfBedrooms;
-
     private Integer numberOfBathrooms;
-
     private LocalDateTime createdAt;
 
     @ManyToOne
@@ -47,6 +42,9 @@ public class House {
     @OneToMany(mappedBy = "house")
     private List<Expense> expenses = new ArrayList<>();
 
+    @OneToMany(mappedBy = "house")
+    private List<Budget> budgets = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -54,10 +52,6 @@ public class House {
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getHouseName() {
@@ -104,10 +98,6 @@ public class House {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public Project getProject() {
         return project;
     }
@@ -138,5 +128,13 @@ public class House {
 
     public void setExpenses(List<Expense> expenses) {
         this.expenses = expenses;
+    }
+
+    public List<Budget> getBudgets() {
+        return budgets;
+    }
+
+    public void setBudgets(List<Budget> budgets) {
+        this.budgets = budgets;
     }
 }
