@@ -14,6 +14,7 @@ public class HouseResponseDTO {
     private LocalDateTime createdAt;
     private Long projectId;
     private List<RoomResponseDTO> rooms;
+    private List<MaterialResponseDTO> materials;
 
     public HouseResponseDTO() {
     }
@@ -27,7 +28,8 @@ public class HouseResponseDTO {
             Integer numberOfBathrooms,
             LocalDateTime createdAt,
             Long projectId,
-            List<RoomResponseDTO> rooms) {
+            List<RoomResponseDTO> rooms,
+            List<MaterialResponseDTO> materials) {
 
         this.id = id;
         this.houseName = houseName;
@@ -38,6 +40,7 @@ public class HouseResponseDTO {
         this.createdAt = createdAt;
         this.projectId = projectId;
         this.rooms = rooms;
+        this.materials = materials;
     }
 
     public Long getId() {
@@ -110,5 +113,13 @@ public class HouseResponseDTO {
 
     public void setRooms(List<RoomResponseDTO> rooms) {
         this.rooms = rooms;
+    }
+
+    public List<MaterialResponseDTO> getMaterials() {
+        return materials;
+    }
+
+    public void setMaterials(List<MaterialResponseDTO> materials) {
+        this.materials = materials;
     }
 }
