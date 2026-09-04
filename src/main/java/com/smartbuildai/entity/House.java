@@ -44,6 +44,9 @@ public class House {
     @OneToMany(mappedBy = "house")
     private List<Material> materials = new ArrayList<>();
 
+    @OneToMany(mappedBy = "house")
+    private List<Expense> expenses = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -127,5 +130,13 @@ public class House {
 
     public void setMaterials(List<Material> materials) {
         this.materials = materials;
+    }
+
+    public List<Expense> getExpenses() {
+        return expenses;
+    }
+
+    public void setExpenses(List<Expense> expenses) {
+        this.expenses = expenses;
     }
 }

@@ -1,9 +1,11 @@
 package com.smartbuildai.service;
 
+import com.smartbuildai.dto.ExpenseResponseDTO;
 import com.smartbuildai.dto.HouseRequestDTO;
 import com.smartbuildai.dto.HouseResponseDTO;
 import com.smartbuildai.dto.MaterialResponseDTO;
 import com.smartbuildai.dto.RoomResponseDTO;
+import com.smartbuildai.entity.Expense;
 import com.smartbuildai.entity.House;
 import com.smartbuildai.entity.Material;
 import com.smartbuildai.entity.Project;
@@ -117,6 +119,11 @@ public class HouseService {
                 .map(this::convertMaterialToResponse)
                 .toList();
 
+        List<ExpenseResponseDTO> expenses = house.getExpenses()
+                .stream()
+                .map(this::convertExpenseToResponse)
+                .toList();
+
         return new HouseResponseDTO(
                 house.getId(),
                 house.getHouseName(),
@@ -127,7 +134,8 @@ public class HouseService {
                 house.getCreatedAt(),
                 house.getProject().getId(),
                 rooms,
-                materials
+                materials,
+                expenses
         );
     }
 
@@ -154,6 +162,19 @@ public class HouseService {
                 material.getPrice(),
                 material.getCreatedAt(),
                 material.getHouse().getId()
+        );
+    }
+
+    private ExpenseResponseDTO convertExpenseToResponse(Expense expense) {
+
+        return new ExpenseResponseDTO(
+                expense.getId(),
+                expense.getExpenseName(),
+                expense.getExpenseType(),
+                expense.getAmount(),
+                expense.getDescription(),
+                expense.getCreatedAt(),
+                expense.getHouse().getId()
         );
     }
 }
