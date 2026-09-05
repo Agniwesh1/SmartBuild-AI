@@ -1,12 +1,14 @@
 package com.smartbuildai.service;
 
 import com.smartbuildai.dto.BudgetResponseDTO;
+import com.smartbuildai.dto.ConstructionProgressResponseDTO;
 import com.smartbuildai.dto.ExpenseResponseDTO;
 import com.smartbuildai.dto.HouseRequestDTO;
 import com.smartbuildai.dto.HouseResponseDTO;
 import com.smartbuildai.dto.MaterialResponseDTO;
 import com.smartbuildai.dto.RoomResponseDTO;
 import com.smartbuildai.entity.Budget;
+import com.smartbuildai.entity.ConstructionProgress;
 import com.smartbuildai.entity.Expense;
 import com.smartbuildai.entity.House;
 import com.smartbuildai.entity.Material;
@@ -97,11 +99,11 @@ public class HouseService {
 
     public void deleteHouse(Long id) {
 
-        House house = houseRepository.findById(id)
+        House existingHouse = houseRepository.findById(id)
                 .orElseThrow(() -> new HouseNotFoundException(
                         "House not found with id: " + id));
 
-        houseRepository.delete(house);
+        houseRepository.delete(existingHouse);
     }
 
     private HouseResponseDTO convertToResponse(House house) {
@@ -126,6 +128,12 @@ public class HouseService {
                 .map(this::convertBudgetToResponse)
                 .toList();
 
+        List<ConstructionProgressResponseDTO> constructionProgress =
+                house.getConstructionProgress()
+                        .stream()
+                        .map(this::convertConstructionProgressToResponse)
+                        .toList();
+
         return new HouseResponseDTO(
                 house.getId(),
                 house.getHouseName(),
@@ -138,7 +146,8 @@ public class HouseService {
                 rooms,
                 materials,
                 expenses,
-                budgets
+                budgets,
+                constructionProgress
         );
     }
 
@@ -154,7 +163,8 @@ public class HouseService {
         );
     }
 
-    private MaterialResponseDTO convertMaterialToResponse(Material material) {
+    private MaterialResponseDTO convertMaterialToResponse(
+            Material material) {
 
         return new MaterialResponseDTO(
                 material.getId(),
@@ -168,7 +178,8 @@ public class HouseService {
         );
     }
 
-    private ExpenseResponseDTO convertExpenseToResponse(Expense expense) {
+    private ExpenseResponseDTO convertExpenseToResponse(
+            Expense expense) {
 
         return new ExpenseResponseDTO(
                 expense.getId(),
@@ -181,13 +192,28 @@ public class HouseService {
         );
     }
 
-    private BudgetResponseDTO convertBudgetToResponse(Budget budget) {
+    private BudgetResponseDTO convertBudgetToResponse(
+            Budget budget) {
 
         return new BudgetResponseDTO(
                 budget.getId(),
                 budget.getTotalBudget(),
                 budget.getCreatedAt(),
                 budget.getHouse().getId()
+        );
+    }
+
+    private ConstructionProgressResponseDTO
+    convertConstructionProgressToResponse(
+            ConstructionProgress progress) {
+
+        return new ConstructionProgressResponseDTO(
+                progress.getId(),
+                progress.getStageName(),
+                progress.getProgressPercentage(),
+                progress.getStatus(),
+                progress.getCreatedAt(),
+                progress.getHouse().getId()
         );
     }
 }
