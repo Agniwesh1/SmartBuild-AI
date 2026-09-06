@@ -7,6 +7,7 @@ import com.smartbuildai.dto.HouseRequestDTO;
 import com.smartbuildai.dto.HouseResponseDTO;
 import com.smartbuildai.dto.MaterialResponseDTO;
 import com.smartbuildai.dto.RoomResponseDTO;
+import com.smartbuildai.dto.TaskResponseDTO;
 import com.smartbuildai.entity.Budget;
 import com.smartbuildai.entity.ConstructionProgress;
 import com.smartbuildai.entity.Expense;
@@ -14,6 +15,7 @@ import com.smartbuildai.entity.House;
 import com.smartbuildai.entity.Material;
 import com.smartbuildai.entity.Project;
 import com.smartbuildai.entity.Room;
+import com.smartbuildai.entity.Task;
 import com.smartbuildai.exception.HouseNotFoundException;
 import com.smartbuildai.exception.ProjectNotFoundException;
 import com.smartbuildai.repository.HouseRepository;
@@ -134,6 +136,11 @@ public class HouseService {
                         .map(this::convertConstructionProgressToResponse)
                         .toList();
 
+        List<TaskResponseDTO> tasks = house.getTasks()
+                .stream()
+                .map(this::convertTaskToResponse)
+                .toList();
+
         return new HouseResponseDTO(
                 house.getId(),
                 house.getHouseName(),
@@ -147,7 +154,8 @@ public class HouseService {
                 materials,
                 expenses,
                 budgets,
-                constructionProgress
+                constructionProgress,
+                tasks
         );
     }
 
@@ -214,6 +222,21 @@ public class HouseService {
                 progress.getStatus(),
                 progress.getCreatedAt(),
                 progress.getHouse().getId()
+        );
+    }
+
+    private TaskResponseDTO convertTaskToResponse(Task task) {
+
+        return new TaskResponseDTO(
+                task.getId(),
+                task.getTaskName(),
+                task.getDescription(),
+                task.getStatus(),
+                task.getPriority(),
+                task.getStartDate(),
+                task.getDueDate(),
+                task.getCreatedAt(),
+                task.getHouse().getId()
         );
     }
 }

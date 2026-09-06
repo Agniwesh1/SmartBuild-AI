@@ -19,6 +19,7 @@ public class HouseResponseDTO {
     private List<ExpenseResponseDTO> expenses;
     private List<BudgetResponseDTO> budgets;
     private List<ConstructionProgressResponseDTO> constructionProgress;
+    private List<TaskResponseDTO> tasks;
 
     public HouseResponseDTO() {
     }
@@ -36,7 +37,8 @@ public class HouseResponseDTO {
             List<MaterialResponseDTO> materials,
             List<ExpenseResponseDTO> expenses,
             List<BudgetResponseDTO> budgets,
-            List<ConstructionProgressResponseDTO> constructionProgress) {
+            List<ConstructionProgressResponseDTO> constructionProgress,
+            List<TaskResponseDTO> tasks) {
 
         this.id = id;
         this.houseName = houseName;
@@ -51,6 +53,7 @@ public class HouseResponseDTO {
         this.expenses = expenses;
         this.budgets = budgets;
         this.constructionProgress = constructionProgress;
+        this.tasks = tasks;
     }
 
     public Long getId() {
@@ -145,5 +148,13 @@ public class HouseResponseDTO {
             List<ConstructionProgressResponseDTO> constructionProgress) {
 
         this.constructionProgress = constructionProgress;
+    }
+
+    public List<TaskResponseDTO> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(List<TaskResponseDTO> tasks) {
+        this.tasks = tasks;
     }
 }
