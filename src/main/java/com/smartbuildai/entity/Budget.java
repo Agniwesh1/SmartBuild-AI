@@ -1,5 +1,6 @@
 package com.smartbuildai.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ public class Budget {
 
     @ManyToOne
     @JoinColumn(name = "house_id")
+    @JsonIgnore
     private House house;
 
     @PrePersist

@@ -5,6 +5,7 @@ import com.smartbuildai.dto.UserResponseDTO;
 import com.smartbuildai.entity.User;
 import com.smartbuildai.exception.UserNotFoundException;
 import com.smartbuildai.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,9 +14,14 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
+
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserResponseDTO createUser(UserRequestDTO request) {
@@ -24,7 +30,11 @@ public class UserService {
 
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
+
+        // Encrypt password before saving it
+        user.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
 
         User savedUser = userRepository.save(user);
 
@@ -42,20 +52,28 @@ public class UserService {
 
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new UserNotFoundException("User not found with id: " + id));
+                        new UserNotFoundException(
+                                "User not found with id: " + id));
 
         return convertToResponse(user);
     }
 
-    public UserResponseDTO updateUser(Long id, UserRequestDTO request) {
+    public UserResponseDTO updateUser(
+            Long id,
+            UserRequestDTO request) {
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new UserNotFoundException("User not found with id: " + id));
+                        new UserNotFoundException(
+                                "User not found with id: " + id));
 
         existingUser.setUsername(request.getUsername());
         existingUser.setEmail(request.getEmail());
-        existingUser.setPassword(request.getPassword());
+
+        // Encrypt the new password before saving
+        existingUser.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
 
         User updatedUser = userRepository.save(existingUser);
 
@@ -66,7 +84,8 @@ public class UserService {
 
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new UserNotFoundException("User not found with id: " + id));
+                        new UserNotFoundException(
+                                "User not found with id: " + id));
 
         userRepository.delete(user);
     }
