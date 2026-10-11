@@ -27,7 +27,7 @@ public class HouseRequestDTO {
     public void setTotalArea(Double totalArea) {
         this.totalArea = totalArea;
     }
-
+    
     public Integer getNumberOfFloors() {
         return numberOfFloors;
     }

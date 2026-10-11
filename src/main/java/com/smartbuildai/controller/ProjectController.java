@@ -1,5 +1,6 @@
 package com.smartbuildai.controller;
 
+import com.smartbuildai.dto.ProjectRequestDTO;
 import com.smartbuildai.entity.Project;
 import com.smartbuildai.service.ProjectService;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,8 +25,8 @@ public class ProjectController {
     }
 
     @PostMapping
-    public Project createProject(@RequestBody Project project) {
-        return projectService.createProject(project);
+    public Project createProject(@RequestBody ProjectRequestDTO request) {
+        return projectService.createProject(request);
     }
 
     @GetMapping
@@ -38,13 +39,22 @@ public class ProjectController {
         return projectService.getProjectById(id);
     }
 
+
     @PutMapping("/{id}")
-    public Project updateProject(@PathVariable Long id, @RequestBody Project project) {
-        return projectService.updateProject(id, project);
+    public Project updateProject(
+            @PathVariable Long id,
+            @RequestBody ProjectRequestDTO request) {
+
+        return projectService.updateProject(id, request);
     }
 
     @DeleteMapping("/{id}")
     public void deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
+    }
+
+    @GetMapping("/user/{userId}")
+    public List<Project> getProjectsByUserId(@PathVariable Long userId) {
+        return projectService.getProjectsByUserId(userId);
     }
 }

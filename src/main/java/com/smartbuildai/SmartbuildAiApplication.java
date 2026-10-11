@@ -1,5 +1,5 @@
-package com.smartbuildai;
-
+ package com.smartbuildai;
+    
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

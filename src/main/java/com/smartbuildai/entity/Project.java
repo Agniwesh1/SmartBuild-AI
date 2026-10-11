@@ -1,8 +1,11 @@
 package com.smartbuildai.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 
@@ -23,8 +26,16 @@ public class Project {
     private BigDecimal budget;
     private LocalDateTime createdAt;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    private User user;
+
     @OneToMany(mappedBy = "project")
     private List<House> houses = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project")
+    private List<Contractor> contractors = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -71,11 +82,27 @@ public class Project {
         this.createdAt = createdAt;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     public List<House> getHouses() {
         return houses;
     }
 
     public void setHouses(List<House> houses) {
         this.houses = houses;
+    }
+
+    public List<Contractor> getContractors() {
+        return contractors;
+    }
+
+    public void setContractors(List<Contractor> contractors) {
+        this.contractors = contractors;
     }
 }

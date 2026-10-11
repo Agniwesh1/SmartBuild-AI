@@ -1,12 +1,16 @@
 package com.smartbuildai.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class User {
@@ -22,6 +26,10 @@ public class User {
     private String password;
 
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<Project> projects = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -66,5 +74,13 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public List<Project> getProjects() {
+        return projects;
+    }
+
+    public void setProjects(List<Project> projects) {
+        this.projects = projects;
     }
 }
