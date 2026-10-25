@@ -7,6 +7,10 @@ import com.smartbuildai.exception.ProjectNotFoundException;
 import com.smartbuildai.exception.UserNotFoundException;
 import com.smartbuildai.repository.ProjectRepository;
 import com.smartbuildai.repository.UserRepository;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,12 +29,45 @@ public class ProjectService {
         this.userRepository = userRepository;
     }
 
-    public Project createProject(ProjectRequestDTO request) {
+    private User getAuthenticatedUser() {
 
-        User user = userRepository.findById(request.getUserId())
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+
+            throw new AccessDeniedException(
+                    "You must be logged in to access projects.");
+        }
+
+        return userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() ->
                         new UserNotFoundException(
-                                "User not found with id: " + request.getUserId()));
+                                "Authenticated user was not found."));
+    }
+
+    private Project getOwnedProject(Long projectId, User user) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ProjectNotFoundException(
+                                "Project not found with id: " + projectId));
+
+        if (project.getUser() == null
+                || !project.getUser().getId().equals(user.getId())) {
+
+            throw new AccessDeniedException(
+                    "You are not allowed to access this project.");
+        }
+
+        return project;
+    }
+
+    public Project createProject(ProjectRequestDTO request) {
+
+        User user = getAuthenticatedUser();
 
         Project project = new Project();
 
@@ -43,43 +80,54 @@ public class ProjectService {
     }
 
     public List<Project> getAllProjects() {
-        return projectRepository.findAll();
+
+        User user = getAuthenticatedUser();
+
+        return projectRepository.findByUserId(user.getId());
     }
 
     public Project getProjectById(Long id) {
-        return projectRepository.findById(id)
-                .orElseThrow(() ->
-                        new ProjectNotFoundException(
-                                "Project not found with id: " + id));
+
+        User user = getAuthenticatedUser();
+
+        return getOwnedProject(id, user);
     }
 
-    public Project updateProject(Long id, ProjectRequestDTO request) {
+    public Project updateProject(
+            Long id,
+            ProjectRequestDTO request) {
 
-        Project existingProject = getProjectById(id);
+        User user = getAuthenticatedUser();
+
+        Project existingProject = getOwnedProject(id, user);
 
         existingProject.setName(request.getName());
         existingProject.setLocation(request.getLocation());
         existingProject.setBudget(request.getBudget());
 
-        if (request.getUserId() != null) {
-
-            User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() ->
-                            new UserNotFoundException(
-                                    "User not found with id: " + request.getUserId()));
-
-            existingProject.setUser(user);
-        }
+        // The project owner cannot be changed through this request.
 
         return projectRepository.save(existingProject);
     }
 
     public void deleteProject(Long id) {
-        getProjectById(id);
+
+        User user = getAuthenticatedUser();
+
+        getOwnedProject(id, user);
+
         projectRepository.deleteById(id);
     }
 
     public List<Project> getProjectsByUserId(Long userId) {
-        return projectRepository.findByUserId(userId);
+
+        User user = getAuthenticatedUser();
+
+        if (!user.getId().equals(userId)) {
+            throw new AccessDeniedException(
+                    "You are not allowed to access another user's projects.");
+        }
+
+        return projectRepository.findByUserId(user.getId());
     }
 }
