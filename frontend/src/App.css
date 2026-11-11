@@ -239,7 +239,6 @@ img {
   color: var(--sb-ink);
   font-size: 12px;
 }
-
 .sb-profile-text span {
   margin-top: 4px;
   color: #8994a6;
@@ -419,8 +418,6 @@ img {
    DASHBOARD
    ========================================================= */
 
-/* Welcome banner */
-
 .sb-welcome-banner {
   position: relative;
   display: flex;
@@ -491,6 +488,7 @@ img {
 .sb-banner-button span {
   font-size: 17px;
 }
+/* Building illustration */
 
 .sb-building-art {
   position: absolute;
@@ -668,8 +666,6 @@ img {
   overflow-wrap: anywhere;
 }
 
-/* Progress bars */
-
 .sb-progress-track,
 .sb-task-track {
   height: 6px;
@@ -688,7 +684,6 @@ img {
   background: linear-gradient(90deg, #4d7ee0, #8fb1ff);
   transition: width 0.3s ease;
 }
-
 /* Dashboard lower content */
 
 .sb-lower-grid {
@@ -1037,7 +1032,6 @@ img {
     background 0.2s ease,
     box-shadow 0.2s ease;
 }
-
 .sb-login-form input::placeholder {
   color: #a2acba;
 }
@@ -1246,7 +1240,6 @@ img {
     margin-top: 25px;
   }
 }
-
 /* Mobile phones */
 
 @media (max-width: 520px) {
@@ -1422,5 +1415,180 @@ img {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+/* =========================================================
+   ACCOUNT SETTINGS PAGE
+   ========================================================= */
+
+.sb-settings-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: var(--sb-background);
+}
+
+.sb-settings-card {
+  width: 100%;
+  max-width: 620px;
+  padding: 38px;
+  background: var(--sb-surface);
+  border: 1px solid var(--sb-border);
+  border-radius: 18px;
+  box-shadow: 0 12px 36px rgba(29, 47, 79, 0.08);
+}
+
+.sb-settings-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 30px;
+  padding: 9px 0;
+  border: 0;
+  background: transparent;
+  color: var(--sb-primary);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.sb-settings-back:hover {
+  color: var(--sb-primary-dark);
+}
+
+.sb-settings-kicker {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--sb-primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.sb-settings-card h1 {
+  margin: 0;
+  color: var(--sb-ink);
+  font-family: 'Manrope', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.sb-settings-description {
+  margin: 10px 0 30px;
+  color: var(--sb-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.sb-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+}
+
+.sb-settings-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #344158;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.sb-settings-form input {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #dce3ed;
+  border-radius: 9px;
+  outline: none;
+  background: #fff;
+  color: var(--sb-ink);
+  font-size: 14px;
+  font-weight: 400;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sb-settings-form input::placeholder {
+  color: #a0aabc;
+}
+
+.sb-settings-form input:focus {
+  border-color: var(--sb-primary);
+  box-shadow: 0 0 0 3px rgba(40, 88, 197, 0.10);
+}
+
+.sb-settings-form input[readonly] {
+  background: #f5f7fb;
+  color: var(--sb-muted);
+  cursor: not-allowed;
+}
+
+.sb-settings-error,
+.sb-settings-success {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sb-settings-error {
+  border: 1px solid #f2caca;
+  background: #fff1f1;
+  color: var(--sb-danger);
+}
+
+.sb-settings-success {
+  border: 1px solid #c8ead9;
+  background: #effaf4;
+  color: var(--sb-success);
+}
+
+.sb-settings-submit {
+  width: 100%;
+  min-height: 49px;
+  margin-top: 5px;
+}
+
+.sb-settings-note {
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--sb-border);
+  color: var(--sb-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.sb-settings-form button:focus-visible,
+.sb-settings-back:focus-visible {
+  outline: 3px solid rgba(40, 88, 197, 0.35);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .sb-settings-page {
+    align-items: flex-start;
+    padding: 24px 15px;
+  }
+
+  .sb-settings-card {
+    padding: 25px 20px;
+    border-radius: 14px;
+  }
+
+  .sb-settings-card h1 {
+    font-size: 25px;
+  }
+
+  .sb-settings-description {
+    font-size: 13px;
   }
 }

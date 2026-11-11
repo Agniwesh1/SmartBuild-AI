@@ -1,5 +1,6 @@
 package com.smartbuildai.controller;
 
+import com.smartbuildai.dto.RoomChangesRequestDTO;
 import com.smartbuildai.dto.RoomRequestDTO;
 import com.smartbuildai.dto.RoomResponseDTO;
 import com.smartbuildai.service.RoomService;
@@ -55,5 +56,14 @@ public class RoomController {
         roomService.deleteRoom(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/confirm")
+    public ResponseEntity<List<RoomResponseDTO>> confirmRoomChanges(
+            @RequestBody RoomChangesRequestDTO request) {
+
+        return ResponseEntity.ok(
+                roomService.applyRoomChanges(request)
+        );
     }
 }

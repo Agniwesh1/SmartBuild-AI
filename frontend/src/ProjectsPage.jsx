@@ -1,4 +1,88 @@
 import { useCallback, useEffect, useState } from 'react'
+import './ProjectsPage.css'
+import RoomManagement from './RoomManagement'
+import FloorManagement from './FloorManagement'
+
+function FloorSummary({ house, token, refreshVersion }) {
+  const [floors, setFloors] = useState([])
+  const [loadingFloors, setLoadingFloors] = useState(true)
+  const [floorError, setFloorError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadFloors() {
+      setLoadingFloors(true)
+      setFloorError('')
+
+      try {
+        const response = await fetch(`/api/floors/house/${house.id}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Could not load floor details (${response.status})`)
+        }
+
+        const data = await response.json()
+        if (!cancelled) {
+          setFloors(Array.isArray(data) ? data : [])
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setFloorError(error.message || 'Could not load floor details.')
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingFloors(false)
+        }
+      }
+    }
+
+    if (house?.id && token) {
+      loadFloors()
+    } else {
+      setFloors([])
+      setLoadingFloors(false)
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [house?.id, token, refreshVersion])
+
+  return (
+    <div className="sp-house-floor-summary" style={{ marginTop: 16 }}>
+      <strong>FLOOR DETAILS</strong>
+      {loadingFloors ? (
+        <p>Loading floor details...</p>
+      ) : floorError ? (
+        <p role="alert">{floorError}</p>
+      ) : floors.length === 0 ? (
+        <p>No floor details added yet.</p>
+      ) : (
+        <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+          {floors
+            .slice()
+            .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))
+            .map((floor) => (
+              <div key={floor.id}>
+                <span>{floor.floorName || `Floor ${floor.floorNumber}`}</span>
+                {' — '}
+                <span>Floor #{floor.floorNumber}</span>
+                {' · '}
+                <span>Area: {floor.area ?? 'Not specified'}</span>
+              </div>
+            ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function ProjectsPage({ token, onBack, onLogout }) {
   const [projects, setProjects] = useState([])
@@ -6,6 +90,22 @@ function ProjectsPage({ token, onBack, onLogout }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const [selectedProject, setSelectedProject] = useState(null)
+  const [selectedHouse, setSelectedHouse] = useState(null)
+  const [floorRefreshVersion, setFloorRefreshVersion] = useState(0)
+  const [detailsLoading, setDetailsLoading] = useState(false)
+  const [detailsError, setDetailsError] = useState('')
+
+  const [houses, setHouses] = useState([])
+  const [housesLoading, setHousesLoading] = useState(false)
+  const [houseSaving, setHouseSaving] = useState(false)
+  const [houseError, setHouseError] = useState('')
+  const [houseSuccess, setHouseSuccess] = useState('')
+
+  const [houseName, setHouseName] = useState('')
+  const [totalArea, setTotalArea] = useState('')
+  const [numberOfFloors, setNumberOfFloors] = useState('1')
 
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
@@ -53,9 +153,216 @@ function ProjectsPage({ token, onBack, onLogout }) {
     loadProjects()
   }, [loadProjects])
 
+  async function loadHouses(projectId) {
+    if (!token || token === 'undefined') {
+      setHouseError('Login session nahi mila. Dobara login karein.')
+      return
+    }
+
+    setHousesLoading(true)
+    setHouseError('')
+
+    try {
+      const response = await fetch('/api/houses', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Could not load houses (${response.status}).`)
+      }
+
+      const data = await response.json()
+
+      if (!Array.isArray(data)) {
+        throw new Error('Server se unexpected house data mila.')
+      }
+
+      const projectHouses = data.filter(
+        (house) => String(house.projectId) === String(projectId),
+      )
+
+      setHouses(projectHouses)
+    } catch (err) {
+      setHouseError(err.message || 'Could not load houses.')
+      setHouses([])
+    } finally {
+      setHousesLoading(false)
+    }
+  }
+
+  async function handleRoomsSaved() {
+    if (!selectedHouse || !token) {
+      throw new Error('House details refresh nahi ho sake.')
+    }
+
+    const response = await fetch(`/api/houses/${selectedHouse.id}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`House details refresh failed (${response.status}).`)
+    }
+
+    const updatedHouse = await response.json()
+
+    setSelectedHouse(updatedHouse)
+
+    setHouses((currentHouses) =>
+      currentHouses.map((house) =>
+        String(house.id) === String(updatedHouse.id)
+          ? updatedHouse
+          : house,
+      ),
+    )
+  }
+    async function handleCreateHouse(event) {
+      event.preventDefault()
+      setHouseError('')
+      setHouseSuccess('')
+
+      if (!selectedProject) {
+        setHouseError('Pehle ek project select karein.')
+        return
+      }
+
+      const cleanHouseName = houseName.trim()
+      const numericArea = Number(totalArea)
+      const numericFloors = Number(numberOfFloors)
+
+      if (!cleanHouseName) {
+        setHouseError('House name enter karein.')
+        return
+      }
+
+      if (!Number.isFinite(numericArea) || numericArea <= 0) {
+        setHouseError('Total area zero se zyada hona chahiye.')
+        return
+      }
+
+      if (!Number.isInteger(numericFloors) || numericFloors < 1) {
+        setHouseError('Floors kam se kam 1 hone chahiye.')
+        return
+      }
+
+
+      if (!token || token === 'undefined') {
+        setHouseError('Login session nahi mila. Dobara login karein.')
+        return
+      }
+
+      setHouseSaving(true)
+
+      try {
+        const response = await fetch('/api/houses', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            houseName: cleanHouseName,
+            totalArea: numericArea,
+            numberOfFloors: numericFloors,
+            numberOfBedrooms: 0,
+            numberOfBathrooms: 0,
+            projectId: selectedProject.id,
+          }),
+        })
+
+        if (!response.ok) {
+          let message = ''
+
+          try {
+            const body = await response.json()
+            message = body.message || body.error || ''
+          } catch {
+            // Server ne JSON error response return nahi kiya.
+          }
+
+          throw new Error(
+            message || `House creation failed (${response.status}).`,
+          )
+        }
+
+        setHouseName('')
+        setTotalArea('')
+        setNumberOfFloors('1')
+
+        await loadHouses(selectedProject.id)
+
+        setHouseSuccess(
+          `"${cleanHouseName}" house successfully save ho gaya.`,
+        )
+      } catch (err) {
+        setHouseError(err.message || 'Could not create house.')
+      } finally {
+        setHouseSaving(false)
+      }
+    }
+
+    async function handleViewDetails(projectId) {
+      if (!token || token === 'undefined') {
+        setDetailsError('Login session nahi mila. Dobara login karein.')
+        return
+      }
+
+      setSelectedProject(null)
+      setSelectedHouse(null)
+      setDetailsError('')
+      setHouseError('')
+      setHouseSuccess('')
+      setDetailsLoading(true)
+
+      try {
+        const response = await fetch(`/api/projects/${projectId}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          let message = ''
+
+          try {
+            const body = await response.json()
+            message = body.message || body.error || ''
+          } catch {
+            // Server ne JSON error response return nahi kiya.
+          }
+
+          throw new Error(
+            message || `Could not load project details (${response.status}).`,
+          )
+        }
+
+        const data = await response.json()
+
+        setSelectedProject(data)
+        setHouses([])
+        setHouseName('')
+        setTotalArea('')
+        setNumberOfFloors('1')
+
+        await loadHouses(projectId)
+      } catch (err) {
+        setDetailsError(err.message || 'Could not load project details.')
+      } finally {
+        setDetailsLoading(false)
+      }
+    }
   async function handleCreate(event) {
     event.preventDefault()
-
     setError('')
     setSuccess('')
 
@@ -102,7 +409,7 @@ function ProjectsPage({ token, onBack, onLogout }) {
           const body = await response.json()
           message = body.message || body.error || ''
         } catch {
-          // The server did not return a JSON error response.
+          // Server ne JSON error response return nahi kiya.
         }
 
         throw new Error(
@@ -117,7 +424,7 @@ function ProjectsPage({ token, onBack, onLogout }) {
         try {
           createdProject = JSON.parse(responseText)
         } catch {
-          // The server may return a non-JSON success response.
+          // Server non-JSON success response bhi de sakta hai.
         }
       }
 
@@ -170,6 +477,22 @@ function ProjectsPage({ token, onBack, onLogout }) {
     return money(value)
   }
 
+  const formatDate = (date) => {
+    if (!date) return 'Date unavailable'
+
+    const parsedDate = new Date(date)
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return 'Date unavailable'
+    }
+
+    return parsedDate.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
+
   const totalBudget = projects.reduce(
     (total, project) => total + (Number(project.budget) || 0),
     0,
@@ -201,6 +524,13 @@ function ProjectsPage({ token, onBack, onLogout }) {
           type="button"
           className="sb-nav-item sb-nav-active"
           aria-current="page"
+          onClick={() => {
+            setSelectedProject(null)
+            setSelectedHouse(null)
+            setDetailsError('')
+            setHouseError('')
+            setHouseSuccess('')
+          }}
         >
           <span>▤</span> My Projects
         </button>
@@ -228,1007 +558,663 @@ function ProjectsPage({ token, onBack, onLogout }) {
       </aside>
 
       <main className="sb-main sp-main">
-        <header className="sb-topbar">
-          <div>
-            <p className="sb-breadcrumb">Workspace / My Projects</p>
+        {selectedProject ? (
+          <>
+            <header className="sb-topbar">
+              <div>
+                <p className="sb-breadcrumb">
+                  Workspace / My Projects / Project Details
+                </p>
 
-            <h1>My Projects</h1>
+                <h1>Project Details</h1>
 
-            <p className="sb-muted">
-              Turn your construction plans into organised projects.
-            </p>
-          </div>
-
-          <div className="sp-header-actions">
-            <button
-              type="button"
-              className="sb-refresh-button"
-              onClick={loadProjects}
-              disabled={loading}
-            >
-              {loading ? 'Refreshing...' : '↻ Refresh projects'}
-            </button>
-
-            <button
-              type="button"
-              className="sb-primary-button sp-header-button"
-              onClick={() => {
-                document.getElementById('sp-project-name')?.focus()
-              }}
-            >
-              + New project
-            </button>
-          </div>
-        </header>
-
-        {error && (
-          <div className="sb-error-banner" role="alert">
-            <span>!</span>
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="sp-success-banner" role="status">
-            <span className="sp-success-icon">✓</span>
-            <span>{success}</span>
-          </div>
-        )}
-
-        <section className="sp-hero">
-          <div className="sp-hero-copy">
-            <span className="sb-banner-label">YOUR CONSTRUCTION PORTFOLIO</span>
-
-            <h2>Every great build starts with a plan.</h2>
-
-            <p>
-              Keep your project locations, budgets and construction plans
-              organised in one place.
-            </p>
-
-            <button
-              type="button"
-              className="sp-hero-button"
-              onClick={() => {
-                document.getElementById('sp-project-name')?.focus()
-              }}
-            >
-              Create a project <span>→</span>
-            </button>
-          </div>
-
-          <div className="sp-hero-art" aria-hidden="true">
-            <div className="sp-sun" />
-
-            <div className="sp-tower sp-tower-one">
-              {Array.from({ length: 12 }, (_, index) => (
-                <i key={index} />
-              ))}
-            </div>
-
-            <div className="sp-tower sp-tower-two">
-              {Array.from({ length: 18 }, (_, index) => (
-                <i key={index} />
-              ))}
-            </div>
-
-            <div className="sp-tower sp-tower-three">
-              {Array.from({ length: 9 }, (_, index) => (
-                <i key={index} />
-              ))}
-            </div>
-
-            <div className="sp-ground" />
-          </div>
-        </section>
-
-        <section className="sp-summary-grid">
-          <article className="sp-summary-card">
-            <div className="sp-summary-icon sp-summary-blue">▤</div>
-
-            <div>
-              <p>Total projects</p>
-              <h3>{projects.length}</h3>
-              <span>Projects in your workspace</span>
-            </div>
-          </article>
-
-          <article className="sp-summary-card">
-            <div className="sp-summary-icon sp-summary-green">₹</div>
-
-            <div>
-              <p>Combined budget</p>
-              <h3>{compactMoney(totalBudget)}</h3>
-              <span>{money(totalBudget)} planned across projects</span>
-            </div>
-          </article>
-
-          <article className="sp-summary-card">
-            <div className="sp-summary-icon sp-summary-purple">⌂</div>
-
-            <div>
-              <p>Workspace status</p>
-              <h3>{loading ? 'Updating' : 'Ready'}</h3>
-              <span>
-                {loading
-                  ? 'Retrieving your projects'
-                  : 'Project management workspace'}
-              </span>
-            </div>
-          </article>
-        </section>
-
-        <section className="sp-create-section">
-          <div className="sp-section-heading">
-            <div>
-              <span className="sp-section-kicker">GET STARTED</span>
-              <h2>Create a new project</h2>
-              <p>Add the basic details of your construction plan.</p>
-            </div>
-
-            <div className="sp-form-number">01</div>
-          </div>
-
-          <form onSubmit={handleCreate} className="sp-create-form">
-            <label className="sp-field">
-              <span>Project name</span>
-
-              <input
-                id="sp-project-name"
-                type="text"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="e.g. My Dream House"
-                maxLength={120}
-                autoComplete="off"
-                required
-              />
-
-              <small>Choose a name you will recognise.</small>
-            </label>
-
-            <label className="sp-field">
-              <span>Project location</span>
-
-              <input
-                type="text"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder="e.g. Gurugram, Haryana"
-                maxLength={200}
-                autoComplete="off"
-                required
-              />
-
-              <small>Where will your construction take place?</small>
-            </label>
-
-            <label className="sp-field">
-              <span>Estimated budget (₹)</span>
-
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={budget}
-                onChange={(event) => setBudget(event.target.value)}
-                placeholder="e.g. 7500000"
-                required
-              />
-
-              <small>Enter the planned construction budget.</small>
-            </label>
-
-            <div className="sp-form-footer">
-              <p>
-                <span>✓</span> Your project details will be saved to your
-                workspace.
-              </p>
-
-              <button
-                type="submit"
-                className="sb-primary-button sp-submit-button"
-                disabled={saving}
-              >
-                {saving ? 'Creating project...' : '+ Create project'}
-                {!saving && <span>→</span>}
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <section className="sp-projects-section">
-          <div className="sp-section-heading sp-projects-heading">
-            <div>
-              <span className="sp-section-kicker">YOUR WORKSPACE</span>
-              <h2>All projects</h2>
-              <p>Review the projects you have created.</p>
-            </div>
-
-            <span className="sp-project-count">
-              {projects.length} {projects.length === 1 ? 'project' : 'projects'}
-            </span>
-          </div>
-
-          {loading && (
-            <div className="sp-state-card">
-              <div className="sp-spinner" />
-              <h3>Loading your projects</h3>
-              <p>Retrieving your saved construction projects...</p>
-            </div>
-          )}
-
-          {!loading && projects.length === 0 && !error && (
-            <div className="sp-state-card">
-              <div className="sp-empty-icon">⌂</div>
-
-              <h3>Your next project starts here</h3>
-
-              <p>
-                You haven't created a project yet. Add your first construction
-                plan using the form above.
-              </p>
+                <p className="sb-muted">
+                  Review the information saved for this construction project.
+                </p>
+              </div>
 
               <button
                 type="button"
-                className="sb-primary-button"
+                className="sb-refresh-button"
                 onClick={() => {
-                  document.getElementById('sp-project-name')?.focus()
+                  setSelectedProject(null)
+                  setSelectedHouse(null)
+                  setDetailsError('')
+                  setHouseError('')
+                  setHouseSuccess('')
                 }}
               >
-                Create your first project <span>→</span>
+                ← Back to My Projects
               </button>
-            </div>
-          )}
+            </header>
 
-          {!loading && projects.length === 0 && error && (
-            <div className="sp-state-card">
-              <div className="sp-empty-icon">!</div>
-              <h3>Projects couldn't be loaded</h3>
-              <p>Check the error message above and try refreshing.</p>
+            {detailsError && (
+              <div className="sb-error-banner" role="alert">
+                <span>!</span>
+                {detailsError}
+              </div>
+            )}
 
-              <button
-                type="button"
-                className="sb-primary-button"
-                onClick={loadProjects}
-              >
-                Try again
-              </button>
-            </div>
-          )}
+            <section className="sp-details-hero">
+              <div className="sp-details-icon">⌂</div>
 
-          {!loading && projects.length > 0 && (
-            <div className="sp-project-grid">
-              {projects.map((project) => (
-                <article className="sp-project-card" key={project.id}>
-                  <div className="sp-project-card-top">
-                    <div className="sp-project-icon">⌂</div>
+              <div>
+                <span className="sp-section-kicker">
+                  PROJECT #{selectedProject.id}
+                </span>
 
-                    <span className="sp-project-id">
-                      PROJECT #{project.id}
-                    </span>
-                  </div>
+                <h2>{selectedProject.name || 'Untitled project'}</h2>
 
-                  <h3>{project.name}</h3>
+                <p>
+                  <span aria-hidden="true">⌖</span>{' '}
+                  {selectedProject.location || 'Location not specified'}
+                </p>
+              </div>
+            </section>
+                        <section
+                          className="sp-details-grid"
+                          aria-label="Project information"
+                        >
+                          <article className="sp-details-card">
+                            <span className="sp-details-label">PROJECT ID</span>
+                            <strong>#{selectedProject.id ?? '—'}</strong>
+                            <p>Unique identifier for this project.</p>
+                          </article>
 
-                  <p className="sp-project-location">
-                    <span aria-hidden="true">⌖</span>
-                    {project.location || 'Location not specified'}
-                  </p>
+                          <article className="sp-details-card">
+                            <span className="sp-details-label">PLANNED BUDGET</span>
+                            <strong>{money(selectedProject.budget)}</strong>
+                            <p>Estimated construction budget.</p>
+                          </article>
 
-                  <div className="sp-project-divider" />
+                          <article className="sp-details-card">
+                            <span className="sp-details-label">CREATED ON</span>
+                            <strong>{formatDate(selectedProject.createdAt)}</strong>
+                            <p>Date this project was saved.</p>
+                          </article>
+                        </section>
 
-                  <div className="sp-budget-label">PLANNED BUDGET</div>
+                        <section className="sp-house-section">
+                          <div className="sp-section-heading">
+                            <div>
+                              <span className="sp-section-kicker">HOUSE MANAGEMENT</span>
+                              <h2>House Details</h2>
+                              <p>
+                                Add and manage the houses associated with this project.
+                              </p>
+                            </div>
 
-                  <div className="sp-project-budget">
-                    {money(project.budget)}
-                  </div>
+                            <div className="sp-form-number">02</div>
+                          </div>
 
-                  <div className="sp-project-meta">
-                    <span>Created on</span>
+                          {houseError && (
+                            <div className="sb-error-banner" role="alert">
+                              <span>!</span>
+                              {houseError}
+                            </div>
+                          )}
 
-                    <strong>
-                      {project.createdAt
-                        ? new Date(project.createdAt).toLocaleDateString(
-                            'en-IN',
-                            {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            },
+                          {houseSuccess && (
+                            <div className="sp-success-banner" role="status">
+                              <span className="sp-success-icon">✓</span>
+                              <span>{houseSuccess}</span>
+                            </div>
+                          )}
+
+                          <form
+                            onSubmit={handleCreateHouse}
+                            className="sp-create-form sp-house-form"
+                          >
+                            <label className="sp-field">
+                              <span>House name</span>
+                              <input
+                                type="text"
+                                value={houseName}
+                                onChange={(event) => setHouseName(event.target.value)}
+                                placeholder="e.g. Main Residence"
+                                maxLength={120}
+                                autoComplete="off"
+                                required
+                              />
+                              <small>Give this house a recognisable name.</small>
+                            </label>
+
+                            <label className="sp-field">
+                              <span>Total area</span>
+                              <input
+                                type="number"
+                                value={totalArea}
+                                onChange={(event) => setTotalArea(event.target.value)}
+                                placeholder="e.g. 1800"
+                                min="0.01"
+                                step="0.01"
+                                required
+                              />
+                              <small>Enter the area using your preferred unit.</small>
+                            </label>
+
+                            <label className="sp-field">
+                              <span>Number of floors</span>
+                              <input
+                                type="number"
+                                value={numberOfFloors}
+                                onChange={(event) =>
+                                  setNumberOfFloors(event.target.value)
+                                }
+                                min="1"
+                                step="1"
+                                required
+                              />
+                              <small>Include all planned floors.</small>
+                            </label>
+
+
+
+
+
+                            <div className="sp-form-footer">
+                              <p>
+                                <span>✓</span> This house will be linked to project #
+                                {selectedProject.id}.
+                              </p>
+
+                              <button
+                                type="submit"
+                                className="sb-primary-button sp-submit-button"
+                                disabled={houseSaving}
+                              >
+                                {houseSaving ? 'Saving house...' : '+ Add house'}
+                                {!houseSaving && <span>→</span>}
+                              </button>
+                            </div>
+                          </form>
+
+                          <div className="sp-house-list-heading">
+                            <div>
+                              <h3>Houses in this project</h3>
+                              <p className="sb-muted">
+                                {houses.length}{' '}
+                                {houses.length === 1 ? 'house' : 'houses'} saved
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="sb-refresh-button"
+                              onClick={() => loadHouses(selectedProject.id)}
+                              disabled={housesLoading}
+                            >
+                              {housesLoading ? 'Refreshing...' : '↻ Refresh houses'}
+                            </button>
+                          </div>
+
+                          {housesLoading && (
+                            <div className="sp-state-card sp-house-state">
+                              <div className="sp-spinner" />
+                              <h3>Loading houses</h3>
+                              <p>Retrieving house details for this project...</p>
+                            </div>
+                          )}
+
+                          {!housesLoading && houses.length === 0 && !houseError && (
+                            <div className="sp-state-card sp-house-state">
+                              <div className="sp-empty-icon">⌂</div>
+                              <h3>No houses added yet</h3>
+                              <p>
+                                Use the form above to add the first house to this project.
+                              </p>
+                            </div>
+                          )}
+
+                          {!housesLoading && houses.length > 0 && (
+                            <div className="sp-house-grid">
+                              {houses.map((house) => (
+                                <article className="sp-house-card" key={house.id}>
+                                  <div className="sp-house-card-header">
+                                    <div>
+                                      <div className="sp-project-icon">⌂</div>
+                                      <span className="sp-project-id">
+                                        HOUSE #{house.id}
+                                      </span>
+                                    </div>
+                                    <span className="sp-house-status">Saved</span>
+                                  </div>
+
+                                  <h3>{house.houseName || 'Unnamed house'}</h3>
+
+                                  <p className="sp-house-project-label">
+                                    Project #{house.projectId ?? selectedProject.id}
+                                  </p>
+
+                                  <div className="sp-house-spec-grid">
+                                    <div>
+                                      <span>TOTAL AREA</span>
+                                      <strong>{house.totalArea ?? '—'}</strong>
+                                      <small>area units</small>
+                                    </div>
+                                    <div>
+                                      <span>TOTAL FLOORS</span>
+                                      <strong>{house.numberOfFloors ?? '—'}</strong>
+                                    </div>
+                                    <div>
+                                      <span>BEDROOMS</span>
+                                      <strong>{house.numberOfBedrooms ?? '—'}</strong>
+                                    </div>
+                                    <div>
+                                      <span>BATHROOMS</span>
+                                      <strong>{house.numberOfBathrooms ?? '—'}</strong>
+                                    </div>
+                                  </div>
+
+                                  <div className="sp-house-floor-section">
+                                    <FloorSummary house={house} token={token} refreshVersion={floorRefreshVersion} />
+                                  </div>
+
+                                  <div className="sp-project-meta">
+                                    <span>Created on</span>
+                                    <strong>{formatDate(house.createdAt)}</strong>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    className="sp-details-button sp-manage-rooms-button"
+                                    onClick={() => setSelectedHouse(house)}
+                                  >
+                                    Manage Rooms <span>→</span>
+                                  </button>
+                                </article>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+
+                        {selectedHouse && (
+                          <section className="sp-room-management-panel">
+                            <div className="sp-section-heading">
+                              <div>
+                                <span className="sp-section-kicker">
+                                  ROOM MANAGEMENT
+                                </span>
+                                <h2>
+                                  {selectedHouse.houseName || 'Unnamed house'}
+                                </h2>
+                                <p>
+                                  Manage the rooms associated with this house.
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="sb-refresh-button"
+                                onClick={() => setSelectedHouse(null)}
+                              >
+                                ← Back to Houses
+                              </button>
+                            </div>
+
+                            <RoomManagement
+                              house={selectedHouse}
+                              token={token}
+                              onRoomsSaved={handleRoomsSaved}
+                            />
+                            <FloorManagement house={selectedHouse} token={token} onFloorsChanged={() => setFloorRefreshVersion((value) => value + 1)} />
+                          </section>
+                        )}
+
+                        {!selectedHouse && (
+                          <section className="sp-details-next">
+                            <span className="sp-section-kicker">
+                              NEXT IN SMARTBUILD AI
+                            </span>
+
+                            <h2>Build out your project plan</h2>
+
+                            <p>
+                              This screen will become the home for your rooms, construction
+                              phases, materials, contractors, expenses and progress. We will
+                              connect these sections as their modules are implemented.
+                            </p>
+                          </section>
+                        )}
+                      </>
+                    ) : (
+                                  <>
+                                    <header className="sb-topbar">
+                                      <div>
+                                        <p className="sb-breadcrumb">Workspace / My Projects</p>
+
+                                        <h1>My Projects</h1>
+
+                                        <p className="sb-muted">
+                                          Turn your construction plans into organised projects.
+                                        </p>
+                                      </div>
+
+                                      <div className="sp-header-actions">
+                                        <button
+                                          type="button"
+                                          className="sb-refresh-button"
+                                          onClick={loadProjects}
+                                          disabled={loading}
+                                        >
+                                          {loading ? 'Refreshing...' : '↻ Refresh projects'}
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          className="sb-primary-button sp-header-button"
+                                          onClick={() => {
+                                            document.getElementById('sp-project-name')?.focus()
+                                          }}
+                                        >
+                                          + New project
+                                        </button>
+                                      </div>
+                                    </header>
+
+                                    {error && (
+                                      <div className="sb-error-banner" role="alert">
+                                        <span>!</span>
+                                        {error}
+                                      </div>
+                                    )}
+
+                                    {success && (
+                                      <div className="sp-success-banner" role="status">
+                                        <span className="sp-success-icon">✓</span>
+                                        <span>{success}</span>
+                                      </div>
+                                    )}
+
+                                    <section className="sp-hero">
+                                      <div className="sp-hero-copy">
+                                        <span className="sb-banner-label">
+                                          YOUR CONSTRUCTION PORTFOLIO
+                                        </span>
+
+                                        <h2>Every great build starts with a plan.</h2>
+
+                                        <p>
+                                          Keep your project locations, budgets and construction plans
+                                          organised in one place.
+                                        </p>
+
+                                        <button
+                                          type="button"
+                                          className="sp-hero-button"
+                                          onClick={() => {
+                                            document.getElementById('sp-project-name')?.focus()
+                                          }}
+                                        >
+                                          Create a project <span>→</span>
+                                        </button>
+                                      </div>
+
+                                      <div className="sp-hero-art" aria-hidden="true">
+                                        <div className="sp-sun" />
+
+                                        <div className="sp-tower sp-tower-one">
+                                          {Array.from({ length: 12 }, (_, index) => (
+                                            <i key={index} />
+                                          ))}
+                                        </div>
+
+                                        <div className="sp-tower sp-tower-two">
+                                          {Array.from({ length: 18 }, (_, index) => (
+                                            <i key={index} />
+                                          ))}
+                                        </div>
+
+                                        <div className="sp-tower sp-tower-three">
+                                          {Array.from({ length: 9 }, (_, index) => (
+                                            <i key={index} />
+                                          ))}
+                                        </div>
+
+                                        <div className="sp-ground" />
+                                      </div>
+                                    </section>
+
+                                    <section className="sp-summary-grid">
+                                      <article className="sp-summary-card">
+                                        <div className="sp-summary-icon sp-summary-blue">▤</div>
+
+                                        <div>
+                                          <p>Total projects</p>
+                                          <h3>{projects.length}</h3>
+                                          <span>Projects in your workspace</span>
+                                        </div>
+                                      </article>
+
+                                      <article className="sp-summary-card">
+                                        <div className="sp-summary-icon sp-summary-green">₹</div>
+
+                                        <div>
+                                          <p>Combined budget</p>
+                                          <h3>{compactMoney(totalBudget)}</h3>
+                                          <span>{money(totalBudget)} planned across projects</span>
+                                        </div>
+                                      </article>
+
+                                      <article className="sp-summary-card">
+                                        <div className="sp-summary-icon sp-summary-purple">⌂</div>
+
+                                        <div>
+                                          <p>Workspace status</p>
+                                          <h3>{loading ? 'Updating' : 'Ready'}</h3>
+
+                                          <span>
+                                            {loading
+                                              ? 'Retrieving your projects'
+                                              : 'Project management workspace'}
+                                          </span>
+                                        </div>
+                                      </article>
+                                    </section>
+
+                                    <section className="sp-create-section">
+                                      <div className="sp-section-heading">
+                                        <div>
+                                          <span className="sp-section-kicker">GET STARTED</span>
+                                          <h2>Create a new project</h2>
+                                          <p>Add the basic details of your construction plan.</p>
+                                        </div>
+
+                                        <div className="sp-form-number">01</div>
+                                      </div>
+
+                                      <form onSubmit={handleCreate} className="sp-create-form">
+                                        <label className="sp-field">
+                                          <span>Project name</span>
+
+                                          <input
+                                            id="sp-project-name"
+                                            type="text"
+                                            value={name}
+                                            onChange={(event) => setName(event.target.value)}
+                                            placeholder="e.g. My Dream House"
+                                            maxLength={120}
+                                            autoComplete="off"
+                                            required
+                                          />
+
+                                          <small>Choose a name you will recognise.</small>
+                                        </label>
+
+                                        <label className="sp-field">
+                                          <span>Project location</span>
+
+                                          <input
+                                            type="text"
+                                            value={location}
+                                            onChange={(event) => setLocation(event.target.value)}
+                                            placeholder="e.g. Gurugram, Haryana"
+                                            maxLength={200}
+                                            autoComplete="off"
+                                            required
+                                          />
+
+                                          <small>Where will your construction take place?</small>
+                                        </label>
+
+                                        <label className="sp-field">
+                                          <span>Estimated budget (₹)</span>
+
+                                          <input
+                                            type="number"
+                                            min="0.01"
+                                            step="0.01"
+                                            value={budget}
+                                            onChange={(event) => setBudget(event.target.value)}
+                                            placeholder="e.g. 7500000"
+                                            required
+                                          />
+
+                                          <small>Enter the planned construction budget.</small>
+                                        </label>
+
+                                        <div className="sp-form-footer">
+                                          <p>
+                                            <span>✓</span> Your project details will be saved to your
+                                            workspace.
+                                          </p>
+
+                                          <button
+                                            type="submit"
+                                            className="sb-primary-button sp-submit-button"
+                                            disabled={saving}
+                                          >
+                                            {saving ? 'Creating project...' : '+ Create project'}
+                                            {!saving && <span>→</span>}
+                                          </button>
+                                        </div>
+                                      </form>
+                                    </section>
+
+                                    <section className="sp-projects-section">
+                                      <div className="sp-section-heading sp-projects-heading">
+                                        <div>
+                                          <span className="sp-section-kicker">YOUR WORKSPACE</span>
+                                          <h2>All projects</h2>
+                                          <p>Review the projects you have created.</p>
+                                        </div>
+
+                                        <span className="sp-project-count">
+                                          {projects.length}{' '}
+                                          {projects.length === 1 ? 'project' : 'projects'}
+                                        </span>
+                                      </div>
+
+                                      {loading && (
+                                        <div className="sp-state-card">
+                                          <div className="sp-spinner" />
+                                          <h3>Loading your projects</h3>
+                                          <p>Retrieving your saved construction projects...</p>
+                                        </div>
+                                      )}
+
+                                      {!loading && projects.length === 0 && !error && (
+                                        <div className="sp-state-card">
+                                          <div className="sp-empty-icon">⌂</div>
+
+                                          <h3>Your next project starts here</h3>
+
+                                          <p>
+                                            You haven't created a project yet. Add your first
+                                            construction plan using the form above.
+                                          </p>
+
+                                          <button
+                                            type="button"
+                                            className="sb-primary-button"
+                                            onClick={() => {
+                                              document.getElementById('sp-project-name')?.focus()
+                                            }}
+                                          >
+                                            Create your first project <span>→</span>
+                                          </button>
+                                        </div>
+                                      )}
+
+                                      {!loading && projects.length === 0 && error && (
+                                        <div className="sp-state-card">
+                                          <div className="sp-empty-icon">!</div>
+                                          <h3>Projects couldn't be loaded</h3>
+                                          <p>Check the error message above and try refreshing.</p>
+
+                                          <button
+                                            type="button"
+                                            className="sb-primary-button"
+                                            onClick={loadProjects}
+                                          >
+                                            Try again
+                                          </button>
+                                        </div>
+                                      )}
+
+                                      {!loading && projects.length > 0 && (
+                                        <div className="sp-project-grid">
+                                          {projects.map((project) => (
+                                            <article className="sp-project-card" key={project.id}>
+                                              <div className="sp-project-card-top">
+                                                <div className="sp-project-icon">⌂</div>
+
+                                                <span className="sp-project-id">
+                                                  PROJECT #{project.id}
+                                                </span>
+                                              </div>
+
+                                              <h3>{project.name}</h3>
+
+                                              <p className="sp-project-location">
+                                                <span aria-hidden="true">⌖</span>
+                                                {project.location || 'Location not specified'}
+                                              </p>
+
+                                              <div className="sp-project-divider" />
+
+                                              <div className="sp-budget-label">PLANNED BUDGET</div>
+
+                                              <div className="sp-project-budget">
+                                                {money(project.budget)}
+                                              </div>
+
+                                              <div className="sp-project-meta">
+                                                <span>Created on</span>
+                                                <strong>{formatDate(project.createdAt)}</strong>
+                                              </div>
+
+                                              <div className="sp-project-card-footer">
+                                                <span className="sp-status-dot" />
+                                                Project saved
+                                              </div>
+
+                                              <button
+                                                type="button"
+                                                className="sp-details-button"
+                                                onClick={() => handleViewDetails(project.id)}
+                                                disabled={detailsLoading}
+                                              >
+                                                {detailsLoading
+                                                  ? 'Loading details...'
+                                                  : 'View Details'}
+                                                <span>→</span>
+                                              </button>
+                                            </article>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </section>
+                                  </>
+                                )}
+
+                                <footer className="sb-footer">
+                                  <span>© SmartBuild AI</span>
+                                  <span>Plan carefully. Build confidently.</span>
+                                </footer>
+                              </main>
+                            </div>
                           )
-                        : 'Date unavailable'}
-                    </strong>
-                  </div>
+                        }
 
-                  <div className="sp-project-card-footer">
-                    <span className="sp-status-dot" />
-                    Project saved
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <footer className="sb-footer">
-          <span>© SmartBuild AI</span>
-          <span>Plan carefully. Build confidently.</span>
-        </footer>
-      </main>
-
-      <style>{`
-        .sp-app {
-          --sp-border: #e5eaf1;
-          --sp-muted: #7b879b;
-        }
-
-        .sp-main {
-          flex: 1;
-        }
-
-        .sp-header-actions {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-
-        .sp-header-button {
-          margin-top: 0;
-          min-height: 40px;
-        }
-
-        .sp-success-banner {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 18px;
-          padding: 13px 16px;
-          border: 1px solid #bce8d0;
-          border-radius: 10px;
-          background: #effbf4;
-          color: #197348;
-          font-size: 13px;
-          overflow-wrap: anywhere;
-        }
-
-        .sp-success-icon {
-          display: grid;
-          place-items: center;
-          width: 23px;
-          height: 23px;
-          flex-shrink: 0;
-          border-radius: 50%;
-          background: #d5f4e2;
-          font-weight: 800;
-        }
-
-        .sp-hero {
-          position: relative;
-          display: flex;
-          align-items: center;
-          min-height: 225px;
-          overflow: hidden;
-          padding: 32px clamp(22px, 4vw, 42px);
-          border-radius: 17px;
-          background: linear-gradient(
-            110deg,
-            #18366f 0%,
-            #2858a9 56%,
-            #3476ca 100%
-          );
-          color: #fff;
-          box-shadow: 0 12px 30px rgba(36, 79, 154, .12);
-        }
-
-        .sp-hero-copy {
-          position: relative;
-          z-index: 2;
-          max-width: 490px;
-        }
-
-        .sp-hero-copy h2 {
-          margin: 13px 0 9px;
-          color: #fff;
-          font-size: clamp(23px, 2.7vw, 31px);
-          line-height: 1.2;
-          letter-spacing: -.8px;
-        }
-
-        .sp-hero-copy p {
-          max-width: 430px;
-          margin: 0;
-          color: #dce8ff;
-          font-size: 13px;
-          line-height: 1.8;
-        }
-
-        .sp-hero-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 17px;
-          margin-top: 20px;
-          padding: 11px 15px;
-          border: 0;
-          border-radius: 8px;
-          background: #fff;
-          color: #244b99;
-          font-size: 12px;
-          font-weight: 750;
-          cursor: pointer;
-        }
-
-        .sp-hero-button span {
-          font-size: 17px;
-        }
-
-        .sp-hero-art {
-          position: absolute;
-          right: 5%;
-          bottom: 0;
-          width: 310px;
-          height: 195px;
-          opacity: .6;
-          pointer-events: none;
-        }
-
-        .sp-sun {
-          position: absolute;
-          top: 5px;
-          right: 40px;
-          width: 95px;
-          height: 95px;
-          border-radius: 50%;
-          background: rgba(200, 225, 255, .14);
-        }
-
-        .sp-tower {
-          position: absolute;
-          bottom: 22px;
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          align-content: start;
-          gap: 8px;
-          padding: 12px 9px;
-          border: 1px solid rgba(255,255,255,.48);
-          background: rgba(255,255,255,.14);
-        }
-
-        .sp-tower i {
-          height: 12px;
-          border: 1px solid rgba(255,255,255,.42);
-          background: rgba(255,255,255,.32);
-        }
-
-        .sp-tower-one {
-          left: 4%;
-          width: 77px;
-          height: 111px;
-        }
-
-        .sp-tower-two {
-          left: 33%;
-          width: 99px;
-          height: 160px;
-        }
-
-        .sp-tower-three {
-          right: 1%;
-          width: 75px;
-          height: 90px;
-        }
-
-        .sp-ground {
-          position: absolute;
-          right: -20px;
-          bottom: 21px;
-          left: 0;
-          height: 1px;
-          background: rgba(255,255,255,.5);
-        }
-
-        .sp-summary-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 16px;
-          margin-top: 20px;
-        }
-
-        .sp-summary-card {
-          display: flex;
-          align-items: flex-start;
-          gap: 14px;
-          min-width: 0;
-          padding: 20px;
-          border: 1px solid #e7ebf2;
-          border-radius: 13px;
-          background: #fff;
-          box-shadow: 0 3px 12px rgba(29, 47, 79, .025);
-        }
-
-        .sp-summary-icon {
-          display: grid;
-          place-items: center;
-          width: 43px;
-          height: 43px;
-          flex-shrink: 0;
-          border-radius: 12px;
-          font-size: 21px;
-          font-weight: 800;
-        }
-
-        .sp-summary-blue {
-          color: #3266ce;
-          background: #edf3ff;
-        }
-
-        .sp-summary-green {
-          color: #21865b;
-          background: #e6f8ef;
-        }
-
-        .sp-summary-purple {
-          color: #8055c8;
-          background: #f1eaff;
-        }
-
-        .sp-summary-card p {
-          margin: 1px 0 7px;
-          color: #748197;
-          font-size: 12px;
-        }
-
-        .sp-summary-card h3 {
-          margin: 0;
-          color: #192840;
-          font-size: clamp(20px, 2vw, 26px);
-          letter-spacing: -.7px;
-          overflow-wrap: anywhere;
-        }
-
-        .sp-summary-card span {
-          display: block;
-          margin-top: 7px;
-          color: #96a0b0;
-          font-size: 10px;
-          line-height: 1.6;
-          overflow-wrap: anywhere;
-        }
-
-        .sp-create-section {
-          margin-top: 22px;
-          padding: clamp(20px, 3vw, 30px);
-          border: 1px solid #e7ebf2;
-          border-radius: 15px;
-          background: #fff;
-          box-shadow: 0 3px 12px rgba(29, 47, 79, .025);
-        }
-
-        .sp-section-heading {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 15px;
-          margin-bottom: 24px;
-        }
-
-        .sp-section-kicker {
-          color: #3266ce;
-          font-size: 9px;
-          font-weight: 850;
-          letter-spacing: 1.5px;
-        }
-
-        .sp-section-heading h2 {
-          margin: 8px 0 6px;
-          color: #1b2940;
-          font-size: 21px;
-          letter-spacing: -.6px;
-        }
-
-        .sp-section-heading p {
-          margin: 0;
-          color: #8793a6;
-          font-size: 12px;
-          line-height: 1.7;
-        }
-
-        .sp-form-number {
-          display: grid;
-          place-items: center;
-          width: 42px;
-          height: 42px;
-          flex-shrink: 0;
-          border-radius: 12px;
-          background: #edf3ff;
-          color: #3266ce;
-          font-size: 15px;
-          font-weight: 800;
-        }
-
-        .sp-create-form {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 18px;
-        }
-
-        .sp-field {
-          display: block;
-          min-width: 0;
-          color: #35445c;
-          font-size: 12px;
-          font-weight: 750;
-        }
-
-        .sp-field > span {
-          display: block;
-          margin-bottom: 9px;
-        }
-
-        .sp-field input {
-          display: block;
-          width: 100%;
-          min-height: 46px;
-          padding: 12px 13px;
-          border: 1px solid #dbe2ed;
-          border-radius: 9px;
-          background: #fbfcfe;
-          color: #17243b;
-          font: inherit;
-          font-weight: 450;
-          transition: border-color .2s ease, box-shadow .2s ease;
-        }
-
-        .sp-field input::placeholder {
-          color: #a2acba;
-        }
-
-        .sp-field input:focus {
-          outline: none;
-          border-color: #5680d7;
-          background: #fff;
-          box-shadow: 0 0 0 4px #eaf0ff;
-        }
-
-        .sp-field small {
-          display: block;
-          margin-top: 8px;
-          color: #98a2b2;
-          font-size: 10px;
-          font-weight: 400;
-          line-height: 1.6;
-        }
-
-        .sp-form-footer {
-          grid-column: 1 / -1;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 15px;
-          flex-wrap: wrap;
-          margin-top: 6px;
-          padding-top: 20px;
-          border-top: 1px solid #edf0f5;
-        }
-
-        .sp-form-footer p {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          margin: 0;
-          color: #8793a6;
-          font-size: 11px;
-          line-height: 1.7;
-        }
-
-        .sp-form-footer p span {
-          color: #21865b;
-          font-weight: 900;
-        }
-
-        .sp-submit-button {
-          margin-top: 0;
-          min-height: 43px;
-        }
-
-        .sp-submit-button span {
-          font-size: 16px;
-        }
-
-        .sp-projects-section {
-          margin-top: 34px;
-        }
-
-        .sp-projects-heading {
-          margin-bottom: 19px;
-        }
-
-        .sp-project-count {
-          padding: 8px 12px;
-          border: 1px solid #e0e8f8;
-          border-radius: 20px;
-          background: #edf3ff;
-          color: #3266ce;
-          font-size: 11px;
-          font-weight: 750;
-          white-space: nowrap;
-        }
-
-        .sp-project-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 17px;
-        }
-
-        .sp-project-card {
-          display: flex;
-          flex-direction: column;
-          min-width: 0;
-          padding: 22px;
-          border: 1px solid #e5eaf1;
-          border-radius: 14px;
-          background: #fff;
-          box-shadow: 0 3px 12px rgba(29, 47, 79, .025);
-          transition: transform .2s ease, box-shadow .2s ease,
-            border-color .2s ease;
-        }
-
-        .sp-project-card:hover {
-          transform: translateY(-3px);
-          border-color: #d0ddf5;
-          box-shadow: 0 12px 28px rgba(29, 47, 79, .07);
-        }
-
-        .sp-project-card-top {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          margin-bottom: 18px;
-        }
-
-        .sp-project-icon {
-          display: grid;
-          place-items: center;
-          width: 43px;
-          height: 43px;
-          border-radius: 12px;
-          background: #edf3ff;
-          color: #3266ce;
-          font-size: 25px;
-        }
-
-        .sp-project-id {
-          color: #9aa5b5;
-          font-size: 9px;
-          font-weight: 850;
-          letter-spacing: 1px;
-          overflow-wrap: anywhere;
-        }
-
-        .sp-project-card h3 {
-          margin: 0;
-          color: #1b2940;
-          font-size: 18px;
-          line-height: 1.45;
-          letter-spacing: -.4px;
-          overflow-wrap: anywhere;
-        }
-
-        .sp-project-location {
-          display: flex;
-          align-items: flex-start;
-          gap: 7px;
-          margin: 10px 0 0;
-          color: #7b879b;
-          font-size: 12px;
-          line-height: 1.7;
-          overflow-wrap: anywhere;
-        }
-
-        .sp-project-location span {
-          color: #3266ce;
-          font-size: 17px;
-          line-height: 1.1;
-        }
-
-        .sp-project-divider {
-          height: 1px;
-          margin: 20px 0 16px;
-          background: #edf0f5;
-        }
-
-        .sp-budget-label {
-          color: #96a0b0;
-          font-size: 9px;
-          font-weight: 850;
-          letter-spacing: 1.1px;
-        }
-
-        .sp-project-budget {
-          margin-top: 7px;
-          color: #1c3154;
-          font-size: clamp(21px, 2vw, 26px);
-          font-weight: 800;
-          letter-spacing: -.8px;
-          overflow-wrap: anywhere;
-        }
-
-        .sp-project-meta {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-top: 19px;
-          padding-top: 15px;
-          border-top: 1px solid #edf0f5;
-          color: #8a95a7;
-          font-size: 10px;
-        }
-
-        .sp-project-meta strong {
-          color: #56647b;
-          font-size: 10px;
-        }
-
-        .sp-project-card-footer {
-          display: flex;
-          align-items: center;
-          gap: 7px;
-          margin-top: 17px;
-          color: #25845d;
-          font-size: 10px;
-          font-weight: 700;
-        }
-
-        .sp-status-dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          background: #35ad78;
-          box-shadow: 0 0 0 3px #e7f8ef;
-        }
-
-        .sp-state-card {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 250px;
-          padding: 30px 22px;
-          border: 1px dashed #d6deeb;
-          border-radius: 14px;
-          background: rgba(255, 255, 255, .7);
-          text-align: center;
-        }
-
-        .sp-state-card h3 {
-          margin: 15px 0 7px;
-          color: #1b2940;
-          font-size: 17px;
-        }
-
-        .sp-state-card p {
-          max-width: 390px;
-          margin: 0;
-          color: #8793a6;
-          font-size: 12px;
-          line-height: 1.8;
-        }
-
-        .sp-empty-icon {
-          display: grid;
-          place-items: center;
-          width: 58px;
-          height: 58px;
-          border-radius: 17px;
-          background: #edf3ff;
-          color: #3266ce;
-          font-size: 32px;
-        }
-
-        .sp-spinner {
-          width: 30px;
-          height: 30px;
-          border: 3px solid #e1e9f8;
-          border-top-color: #3266ce;
-          border-radius: 50%;
-          animation: sp-spin .8s linear infinite;
-        }
-
-        @keyframes sp-spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @media (max-width: 1250px) {
-          .sp-project-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 1100px) {
-          .sp-summary-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
-          .sp-hero-art {
-            right: -30px;
-            opacity: .3;
-          }
-
-          .sp-create-form {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 760px) {
-          .sp-main {
-            padding: 23px 16px 18px;
-          }
-
-          .sp-header-actions {
-            width: 100%;
-          }
-
-          .sp-hero {
-            min-height: 235px;
-          }
-
-          .sp-hero-art {
-            right: -105px;
-            opacity: .22;
-          }
-
-          .sp-project-grid {
-            grid-template-columns: minmax(0, 1fr);
-          }
-
-          .sp-create-form {
-            grid-template-columns: minmax(0, 1fr);
-          }
-
-          .sp-form-footer {
-            align-items: stretch;
-            flex-direction: column;
-          }
-
-          .sp-submit-button {
-            width: 100%;
-          }
-
-          .sp-summary-grid {
-            grid-template-columns: minmax(0, 1fr);
-          }
-        }
-
-        @media (max-width: 430px) {
-          .sp-create-section {
-            padding: 19px;
-          }
-
-          .sp-project-card {
-            padding: 19px;
-          }
-
-          .sp-hero-copy h2 {
-            font-size: 24px;
-          }
-
-          .sp-projects-heading {
-            align-items: flex-start;
-          }
-
-          .sp-project-count {
-            font-size: 10px;
-          }
-        }
-      `}</style>
-    </div>
-  )
-}
-
-export default ProjectsPage
+                        export default ProjectsPage

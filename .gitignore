@@ -33,3 +33,27 @@ build/
 .vscode/
 
 application.properties
+# Local secrets and generated frontend files
+.env
+.env.*
+!.env.example
+node_modules/
+frontend/dist/
+
+# Local secrets and generated files
+.env
+.env.*
+!.env.example
+node_modules/
+**/node_modules/
+target/
+dist/
+frontend.zip
+
+frontend/node_modules - Copy/
+
+# Exclude duplicate frontend and generated files
+frontend/frontend/
+frontend/node_modules/
+frontend/node_modules - Copy/
+frontend/dist/

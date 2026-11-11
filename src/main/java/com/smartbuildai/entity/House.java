@@ -16,7 +16,7 @@ import java.util.List;
 
 @Entity
 public class House {
-
+ 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

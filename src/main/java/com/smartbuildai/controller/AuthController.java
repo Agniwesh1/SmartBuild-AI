@@ -1,5 +1,6 @@
 package com.smartbuildai.controller;
 
+import com.smartbuildai.dto.auth.ChangeCredentialsRequestDTO;
 import com.smartbuildai.dto.auth.LoginRequestDTO;
 import com.smartbuildai.dto.auth.LoginResponseDTO;
 import com.smartbuildai.security.AuthService;
@@ -22,6 +23,17 @@ public class AuthController {
 
         return ResponseEntity.ok(
                 authService.login(request)
+        );
+    }
+
+    @PutMapping("/credentials")
+    public ResponseEntity<String> changeCredentials(
+            @RequestBody ChangeCredentialsRequestDTO request) {
+
+        authService.changeCredentials(request);
+
+        return ResponseEntity.ok(
+                "Credentials updated successfully. Please log in again with your new credentials."
         );
     }
 }

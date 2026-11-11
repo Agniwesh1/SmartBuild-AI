@@ -1,138 +1,98 @@
-# SmartBuild AI 🏗️
+# SmartBuild AI
 
-SmartBuild AI is a web application for managing and organizing house construction projects.
+SmartBuild AI is a construction-project planning workspace built with React, Vite, Java, Spring Boot, Spring Data JPA, Spring Security/JWT and MySQL.
 
-The project is being developed using Java, Spring Boot, Spring Data JPA, Hibernate, and MySQL. The goal is to build a practical platform for managing construction projects and adding AI-assisted features in the future.
+## Included modules
 
-## 🚧 Project Status
+### Backend APIs
+- Authentication and user management
+- Projects and houses
+- Rooms with staged confirmation (`POST /api/rooms/confirm`); confirmed room types recalculate bedroom/bathroom counts only
+- Floors (`GET /api/floors/house/{houseId}`, `POST /api/floors`, `PUT /api/floors/{id}`, `DELETE /api/floors/{id}`)
+- Materials and inventory
+- Contractors
+- Budgets and expenses
+- Tasks and construction progress
+- Dashboard summary
 
-Currently in development.
-
-## ✨ Current Features
-
-- Project creation
-- View all projects
-- View project by ID
-- Update project details
-- Delete project
-- Project not found exception handling
-- REST APIs
-- MySQL database integration
-
-## 🛠️ Technology Stack
-
-- Java
-- Spring Boot
-- Spring Data JPA
-- Hibernate
-- MySQL
-- REST API
-- Postman
-- Git
-- GitHub
-- IntelliJ IDEA
-
-## 🏗️ Project Structure
-
-src/main/java/com/smartbuildai
-
-├── controller
-│   └── ProjectController.java
-│
-├── entity
-│   └── Project.java
-│
-├── exception
-│   ├── GlobalExceptionHandler.java
-│   └── ProjectNotFoundException.java
-│
-├── repository
-│   └── ProjectRepository.java
-│
-└── service
-    └── ProjectService.java
-
-## 🔌 REST API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/projects | Create a project |
-| GET | /api/projects | Get all projects |
-| GET | /api/projects/{id} | Get project by ID |
-| PUT | /api/projects/{id} | Update project |
-| DELETE | /api/projects/{id} | Delete project |
-
-## 🗄️ Database
-
-MySQL database:
-
-smartbuild_ai
-
-Database configuration is stored in:
-
-src/main/resources/application.properties
-
-Example:
-
-spring.application.name=smartbuild-ai
-spring.datasource.url=jdbc:mysql://localhost:3306/smartbuild_ai
-spring.datasource.username=root
-spring.datasource.password=
-spring.jpa.hibernate.ddl-auto=update
-
-## 🚀 How to Run
-
-1. Clone the repository:
-
-git clone https://github.com/Agniwesh1/SmartBuild-AI.git
-
-2. Create the MySQL database:
-
-CREATE DATABASE smartbuild_ai;
-
-3. Configure your MySQL username and password in application.properties.
-
-4. Open the project in IntelliJ IDEA.
-
-5. Run:
-
-SmartbuildAiApplication.java
-
-6. The application will run on:
-
-http://localhost:8080
-
-## 🧪 API Testing
-
-The REST APIs are tested using Postman.
-
-Current tests:
-
-- Create Project
-- Get All Projects
-- Get Project by ID
-- Update Project
-- Delete Project
-- 404 handling for a project that does not exist
-
-## 🔮 Future Features
-
-- User authentication
-- User and project management
-- House planning
-- Construction expense tracking
-- Material management
-- Construction progress tracking
+### Frontend
+- Login and account settings
 - Dashboard
-- Reports and analytics
-- Frontend
-- AI-assisted house planning
-- AI-based construction recommendations
+- Project and house management
+- Staged room management
+- Floor CRUD panel within the selected house
+- Construction task planning, materials inventory, contractor records, budgets and expenses
+- Construction stage progress tracking
+- Built-in rule-based construction planning assistant (not a live LLM connection)
+- Workspace reports with CSV export
 
-## 👨‍💻 Author
+House total area and the manually entered house floor count are not recalculated by room or floor record changes. Bedroom/bathroom counts start at zero for newly created houses and are recalculated when room changes are confirmed.
 
-Agniwesh
+## Requirements
+- JDK matching the Maven compiler setting in `pom.xml` (currently Java 25)
+- Node.js 22 or newer and npm
+- MySQL 8+
+- IntelliJ IDEA Community Edition
 
----
+## Database setup
+Create the database in MySQL:
 
-⭐ SmartBuild AI is actively under development.
+```sql
+CREATE DATABASE smartbuild_ai;
+```
+
+Set environment variables before starting the backend. Do not commit database credentials:
+
+Windows PowerShell:
+
+```powershell
+$env:DB_URL="jdbc:mysql://localhost:3306/smartbuild_ai"
+$env:DB_USERNAME="root"
+$env:DB_PASSWORD="YOUR_MYSQL_PASSWORD"
+$env:JWT_SECRET="GENERATE_A_RANDOM_SECRET_AT_LEAST_32_CHARACTERS_LONG"
+```
+
+The backend uses `spring.jpa.hibernate.ddl-auto=update` to create/update tables. Back up your database before schema changes.
+
+## Run backend (from project root)
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+Backend default URL: `http://localhost:8080`
+
+## Run frontend (second terminal)
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+Open the Vite URL shown in the terminal (normally `http://localhost:5173`). The Vite development proxy forwards `/api` requests to the Spring Boot server; see `frontend/vite.config.js`.
+
+## Build checks
+
+Backend:
+
+```powershell
+.\mvnw.cmd clean test
+```
+
+Frontend:
+
+```powershell
+cd frontend
+npm run build
+npm run lint
+```
+
+See `IMPLEMENTATION_NOTES.md` for integration scope and verification limitations.
+
+## Important configuration and integration notes
+- JWT authentication is required for protected API routes. User registration (`POST /api/users`) and login (`POST /api/auth/login`) are public.
+- Floor records are associated with a house. They are independent records; changing them does not automatically rewrite the house's manually maintained `numberOfFloors` value.
+- Room confirmation is transactional. `totalArea` and `numberOfFloors` are deliberately left unchanged.
+- The Construction Assistant currently provides rule-based planning guidance. It is not connected to an external LLM provider and does not send user data to an AI service.
+- The source ZIP is a development codebase, not a claim of production certification. Run the build and API/browser tests in your local JDK/MySQL environment before deployment.

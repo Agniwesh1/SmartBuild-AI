@@ -43,11 +43,16 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/login"
+                        ).permitAll()
+
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/users"
                         ).permitAll()
+
                         .anyRequest().authenticated()
                 )
 
@@ -71,7 +76,7 @@ public class SecurityConfig {
                 new DaoAuthenticationProvider(
                         customUserDetailsService
                 );
-
+        
         provider.setPasswordEncoder(passwordEncoder());
 
         return provider;
