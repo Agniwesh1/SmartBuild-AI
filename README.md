@@ -73,7 +73,7 @@ Open a terminal in the project root directory:
 
 Backend URL:
 
-[http://localhost:8080](http://localhost:8080)
+http://localhost:8080
 
 ## Run the Frontend
 
@@ -87,7 +87,7 @@ npm run dev
 
 Open the Vite URL displayed in the terminal, normally:
 
-[http://localhost:5173](http://localhost:5173)
+http://localhost:5173
 
 The Vite development proxy forwards `/api` requests to Spring Boot.
 
