@@ -1,6 +1,6 @@
 # SmartBuild AI
 
-SmartBuild AI is a construction-project planning workspace built with React, Vite, Java, Spring Boot, Spring Data JPA, Spring Security/JWT, and MySQL.
+SmartBuild AI is a construction project planning workspace built using React, Vite, Java, Spring Boot, Spring Data JPA, Spring Security/JWT, and MySQL.
 
 ## Included Modules
 
@@ -28,10 +28,11 @@ SmartBuild AI is a construction-project planning workspace built with React, Vit
 - Rule-based construction planning assistant
 - Reports with CSV export
 
-**Note:** The construction assistant is rule-based and is not connected to a live LLM service.
+**Note:** The construction assistant currently uses rule-based logic and is not connected to a live AI service.
 
 ## Requirements
-- JDK 25
+
+- JDK 25 or compatible newer JDK
 - Node.js 22.12 or newer
 - npm
 - MySQL 8+
@@ -45,7 +46,7 @@ Create the database in MySQL:
 CREATE DATABASE smartbuild_ai;
 ```
 
-Configure these environment variables in PowerShell before starting the backend. Run each command separately:
+Configure the following environment variables in PowerShell before starting the backend. Run each command separately:
 
 ```powershell
 $env:DB_URL="jdbc:mysql://localhost:3306/smartbuild_ai"
@@ -54,19 +55,23 @@ $env:DB_PASSWORD="YOUR_MYSQL_PASSWORD"
 $env:JWT_SECRET="YOUR_RANDOM_SECRET_AT_LEAST_32_CHARACTERS_LONG"
 ```
 
-Never commit actual database credentials or JWT secrets.
+Replace the placeholder values with your own local credentials.
 
-The backend uses `spring.jpa.hibernate.ddl-auto=update` to create or update database tables. Back up your database before schema changes.
+**Important:** Never commit actual database credentials or JWT secrets to GitHub.
+
+The backend uses `spring.jpa.hibernate.ddl-auto=update` to create or update database tables. Back up your database before making schema changes.
 
 ## Run the Backend
 
-From the project root:
+Open a terminal in the project root directory:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-Backend URL: http://localhost:8080
+Backend URL:
+
+http://localhost:8080
 
 ## Run the Frontend
 
@@ -78,7 +83,9 @@ npm ci
 npm run dev
 ```
 
-Open the Vite URL displayed in the terminal, normally http://localhost:5173.
+Open the Vite URL displayed in the terminal, normally:
+
+http://localhost:5173
 
 The Vite development proxy forwards `/api` requests to Spring Boot.
 
@@ -86,7 +93,7 @@ The Vite development proxy forwards `/api` requests to Spring Boot.
 
 ### Backend
 
-From the project root:
+Run from the project root:
 
 ```powershell
 .\mvnw.cmd clean test
@@ -94,7 +101,7 @@ From the project root:
 
 ### Frontend
 
-From the frontend directory:
+Run from the frontend directory:
 
 ```powershell
 npm run build
