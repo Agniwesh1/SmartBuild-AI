@@ -1,68 +1,77 @@
 # SmartBuild AI
 
-SmartBuild AI is a construction-project planning workspace built with React, Vite, Java, Spring Boot, Spring Data JPA, Spring Security/JWT and MySQL.
+SmartBuild AI is a construction-project planning workspace built with React, Vite, Java, Spring Boot, Spring Data JPA, Spring Security/JWT, and MySQL.
 
-## Included modules
+## Included Modules
 
-### Backend APIs
+### Backend
 - Authentication and user management
 - Projects and houses
-- Rooms with staged confirmation (`POST /api/rooms/confirm`); confirmed room types recalculate bedroom/bathroom counts only
-- Floors (`GET /api/floors/house/{houseId}`, `POST /api/floors`, `PUT /api/floors/{id}`, `DELETE /api/floors/{id}`)
+- Room management with staged confirmation
+- Floor management
 - Materials and inventory
 - Contractors
 - Budgets and expenses
-- Tasks and construction progress
+- Construction tasks and progress
 - Dashboard summary
 
 ### Frontend
 - Login and account settings
 - Dashboard
 - Project and house management
-- Staged room management
-- Floor CRUD panel within the selected house
-- Construction task planning, materials inventory, contractor records, budgets and expenses
-- Construction stage progress tracking
-- Built-in rule-based construction planning assistant (not a live LLM connection)
-- Workspace reports with CSV export
+- Room and floor management
+- Construction task planning
+- Materials inventory
+- Contractor records
+- Budgets and expenses
+- Construction progress tracking
+- Rule-based construction planning assistant
+- Reports with CSV export
 
-House total area and the manually entered house floor count are not recalculated by room or floor record changes. Bedroom/bathroom counts start at zero for newly created houses and are recalculated when room changes are confirmed.
+**Note:** The construction assistant is rule-based and is not connected to a live LLM service.
 
 ## Requirements
-- JDK matching the Maven compiler setting in `pom.xml` (currently Java 25)
-- Node.js 22 or newer and npm
+
+- JDK 25
+- Node.js 22.12 or newer
+- npm
 - MySQL 8+
 - IntelliJ IDEA Community Edition
 
-## Database setup
+## Database Setup
+
 Create the database in MySQL:
 
 ```sql
 CREATE DATABASE smartbuild_ai;
 ```
 
-Set environment variables before starting the backend. Do not commit database credentials:
-
-Windows PowerShell:
+Configure these environment variables in PowerShell before starting the backend:
 
 ```powershell
 $env:DB_URL="jdbc:mysql://localhost:3306/smartbuild_ai"
 $env:DB_USERNAME="root"
 $env:DB_PASSWORD="YOUR_MYSQL_PASSWORD"
-$env:JWT_SECRET="GENERATE_A_RANDOM_SECRET_AT_LEAST_32_CHARACTERS_LONG"
+$env:JWT_SECRET="YOUR_RANDOM_SECRET_AT_LEAST_32_CHARACTERS_LONG"
 ```
 
-The backend uses `spring.jpa.hibernate.ddl-auto=update` to create/update tables. Back up your database before schema changes.
+Never commit actual database credentials or JWT secrets.
 
-## Run backend (from project root)
+The backend uses `spring.jpa.hibernate.ddl-auto=update` to create or update database tables. Back up your database before schema changes.
+
+## Run the Backend
+
+From the project root:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-Backend default URL: `http://localhost:8080`
+Backend URL: http://localhost:8080
 
-## Run frontend (second terminal)
+## Run the Frontend
+
+Open a second terminal:
 
 ```powershell
 cd frontend
@@ -70,29 +79,37 @@ npm ci
 npm run dev
 ```
 
-Open the Vite URL shown in the terminal (normally `http://localhost:5173`). The Vite development proxy forwards `/api` requests to the Spring Boot server; see `frontend/vite.config.js`.
+Open the Vite URL displayed in the terminal, normally http://localhost:5173.
 
-## Build checks
+The Vite development proxy forwards `/api` requests to Spring Boot.
 
-Backend:
+## Build and Test
+
+### Backend
+
+From the project root:
 
 ```powershell
 .\mvnw.cmd clean test
 ```
 
-Frontend:
+### Frontend
+
+From the frontend directory:
 
 ```powershell
-cd frontend
 npm run build
 npm run lint
 ```
 
-See `IMPLEMENTATION_NOTES.md` for integration scope and verification limitations.
+## Important Notes
 
-## Important configuration and integration notes
-- JWT authentication is required for protected API routes. User registration (`POST /api/users`) and login (`POST /api/auth/login`) are public.
-- Floor records are associated with a house. They are independent records; changing them does not automatically rewrite the house's manually maintained `numberOfFloors` value.
-- Room confirmation is transactional. `totalArea` and `numberOfFloors` are deliberately left unchanged.
-- The Construction Assistant currently provides rule-based planning guidance. It is not connected to an external LLM provider and does not send user data to an AI service.
-- The source ZIP is a development codebase, not a claim of production certification. Run the build and API/browser tests in your local JDK/MySQL environment before deployment.
+- Protected API routes require JWT authentication.
+- User registration (`POST /api/users`) and login (`POST /api/auth/login`) are public.
+- Room confirmation uses `POST /api/rooms/confirm`.
+- Confirmed room changes recalculate bedroom and bathroom counts.
+- Room and floor changes do not automatically update the house's manually maintained total area or floor count.
+- The AI assistant currently provides rule-based guidance, not live AI-generated responses.
+- This project is a development codebase and is not certified for production deployment.
+
+See `IMPLEMENTATION_NOTES.md` for implementation details and verification limitations.
