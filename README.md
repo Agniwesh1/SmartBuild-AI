@@ -5,6 +5,7 @@ SmartBuild AI is a construction project planning workspace built using React, Vi
 ## Included Modules
 
 ### Backend
+
 - Authentication and user management
 - Projects and houses
 - Room management with staged confirmation
@@ -16,6 +17,7 @@ SmartBuild AI is a construction project planning workspace built using React, Vi
 - Dashboard summary
 
 ### Frontend
+
 - Login and account settings
 - Dashboard
 - Project and house management
@@ -71,7 +73,7 @@ Open a terminal in the project root directory:
 
 Backend URL:
 
-http://localhost:8080
+[http://localhost:8080](http://localhost:8080)
 
 ## Run the Frontend
 
@@ -85,7 +87,7 @@ npm run dev
 
 Open the Vite URL displayed in the terminal, normally:
 
-http://localhost:5173
+[http://localhost:5173](http://localhost:5173)
 
 The Vite development proxy forwards `/api` requests to Spring Boot.
 
