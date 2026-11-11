@@ -31,7 +31,6 @@ SmartBuild AI is a construction-project planning workspace built with React, Vit
 **Note:** The construction assistant is rule-based and is not connected to a live LLM service.
 
 ## Requirements
-
 - JDK 25
 - Node.js 22.12 or newer
 - npm
@@ -46,7 +45,7 @@ Create the database in MySQL:
 CREATE DATABASE smartbuild_ai;
 ```
 
-Configure these environment variables in PowerShell before starting the backend:
+Configure these environment variables in PowerShell before starting the backend. Run each command separately:
 
 ```powershell
 $env:DB_URL="jdbc:mysql://localhost:3306/smartbuild_ai"
