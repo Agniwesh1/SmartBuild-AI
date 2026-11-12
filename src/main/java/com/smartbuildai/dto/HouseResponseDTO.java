@@ -1,3 +1,4 @@
+
 package com.smartbuildai.dto;
 
 import java.time.LocalDateTime;
@@ -8,6 +9,8 @@ public class HouseResponseDTO {
     private Long id;
     private String houseName;
     private Double totalArea;
+    private Double plotArea;
+    private Double builtUpArea;
     private Integer numberOfFloors;
     private Integer numberOfBedrooms;
     private Integer numberOfBathrooms;
@@ -28,6 +31,8 @@ public class HouseResponseDTO {
             Long id,
             String houseName,
             Double totalArea,
+            Double plotArea,
+            Double builtUpArea,
             Integer numberOfFloors,
             Integer numberOfBedrooms,
             Integer numberOfBathrooms,
@@ -43,6 +48,8 @@ public class HouseResponseDTO {
         this.id = id;
         this.houseName = houseName;
         this.totalArea = totalArea;
+        this.plotArea = plotArea;
+        this.builtUpArea = builtUpArea;
         this.numberOfFloors = numberOfFloors;
         this.numberOfBedrooms = numberOfBedrooms;
         this.numberOfBathrooms = numberOfBathrooms;
@@ -74,6 +81,22 @@ public class HouseResponseDTO {
 
     public void setTotalArea(Double totalArea) {
         this.totalArea = totalArea;
+    }
+
+    public Double getPlotArea() {
+        return plotArea;
+    }
+
+    public void setPlotArea(Double plotArea) {
+        this.plotArea = plotArea;
+    }
+
+    public Double getBuiltUpArea() {
+        return builtUpArea;
+    }
+
+    public void setBuiltUpArea(Double builtUpArea) {
+        this.builtUpArea = builtUpArea;
     }
 
     public Integer getNumberOfFloors() {

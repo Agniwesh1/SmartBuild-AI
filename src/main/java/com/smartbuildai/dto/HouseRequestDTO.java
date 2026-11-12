@@ -1,9 +1,15 @@
+
 package com.smartbuildai.dto;
 
 public class HouseRequestDTO {
 
     private String houseName;
     private Double totalArea;
+
+    // New area fields
+    private Double plotArea;
+    private Double builtUpArea;
+
     private Integer numberOfFloors;
     private Integer numberOfBedrooms;
     private Integer numberOfBathrooms;
@@ -27,7 +33,23 @@ public class HouseRequestDTO {
     public void setTotalArea(Double totalArea) {
         this.totalArea = totalArea;
     }
-    
+
+    public Double getPlotArea() {
+        return plotArea;
+    }
+
+    public void setPlotArea(Double plotArea) {
+        this.plotArea = plotArea;
+    }
+
+    public Double getBuiltUpArea() {
+        return builtUpArea;
+    }
+
+    public void setBuiltUpArea(Double builtUpArea) {
+        this.builtUpArea = builtUpArea;
+    }
+
     public Integer getNumberOfFloors() {
         return numberOfFloors;
     }

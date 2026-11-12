@@ -1,3 +1,4 @@
+
 package com.smartbuildai.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -16,13 +17,18 @@ import java.util.List;
 
 @Entity
 public class House {
- 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String houseName;
     private Double totalArea;
+
+    // New area fields
+    private Double plotArea;
+    private Double builtUpArea;
+
     private Integer numberOfFloors;
     private Integer numberOfBedrooms;
     private Integer numberOfBathrooms;
@@ -74,6 +80,22 @@ public class House {
 
     public void setTotalArea(Double totalArea) {
         this.totalArea = totalArea;
+    }
+
+    public Double getPlotArea() {
+        return plotArea;
+    }
+
+    public void setPlotArea(Double plotArea) {
+        this.plotArea = plotArea;
+    }
+
+    public Double getBuiltUpArea() {
+        return builtUpArea;
+    }
+
+    public void setBuiltUpArea(Double builtUpArea) {
+        this.builtUpArea = builtUpArea;
     }
 
     public Integer getNumberOfFloors() {

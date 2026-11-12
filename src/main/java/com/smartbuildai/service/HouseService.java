@@ -1,3 +1,4 @@
+
 package com.smartbuildai.service;
 
 import com.smartbuildai.dto.BudgetResponseDTO;
@@ -48,6 +49,8 @@ public class HouseService {
 
         house.setHouseName(request.getHouseName());
         house.setTotalArea(request.getTotalArea());
+        house.setPlotArea(request.getPlotArea());
+        house.setBuiltUpArea(request.getBuiltUpArea());
         house.setNumberOfFloors(request.getNumberOfFloors());
         house.setNumberOfBedrooms(request.getNumberOfBedrooms());
         house.setNumberOfBathrooms(request.getNumberOfBathrooms());
@@ -89,6 +92,8 @@ public class HouseService {
 
         existingHouse.setHouseName(request.getHouseName());
         existingHouse.setTotalArea(request.getTotalArea());
+        existingHouse.setPlotArea(request.getPlotArea());
+        existingHouse.setBuiltUpArea(request.getBuiltUpArea());
         existingHouse.setNumberOfFloors(request.getNumberOfFloors());
         existingHouse.setNumberOfBedrooms(request.getNumberOfBedrooms());
         existingHouse.setNumberOfBathrooms(request.getNumberOfBathrooms());
@@ -145,6 +150,8 @@ public class HouseService {
                 house.getId(),
                 house.getHouseName(),
                 house.getTotalArea(),
+                house.getPlotArea(),
+                house.getBuiltUpArea(),
                 house.getNumberOfFloors(),
                 house.getNumberOfBedrooms(),
                 house.getNumberOfBathrooms(),
